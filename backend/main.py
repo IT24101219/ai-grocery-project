@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session
 from database import engine, get_db, Base
 from models import * 
 from APIs import cart, orders
+from APIs import feedback ##----
+
 
 Base.metadata.create_all(bind=engine)
 
@@ -11,6 +13,7 @@ app = FastAPI(title="Ransara Supermarket API")
 
 app.include_router(cart.router)
 app.include_router(orders.router)
+app.include_router(feedback.router) ##----
 
 @app.get("/")
 def root():
