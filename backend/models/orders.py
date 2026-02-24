@@ -8,8 +8,7 @@ class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, nullable=False) 
-    
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)    
     total_amount = Column(Float, default=0.0)
     
     current_status = Column(String, default="Pending") 
