@@ -15,11 +15,24 @@ class CartItemRequest(BaseModel):
     product_id: int
     quantity: int
 
+# --- THE AUTHENTICATION BRIDGE ---
+def get_current_user():
+    """
+    Placeholder dependency. 
+    Right now, it just returns user_id = 1. 
+    Later, your teammate will update this single function to decode a real JWT token 
+    and fetch the real User object from the database!
+    """
+    return 1 
+# ---------------------------------
+
+
 @router.post("/add")
-def add_to_cart(item: CartItemRequest, db: Session = Depends(get_db)):
-    user_id = 1 # Hardcoded until the User module is built
-    
-    # 1. Find or create an active cart for the user
+def add_to_cart(
+    item: CartItemRequest, 
+    db: Session = Depends(get_db), 
+    user_id: int = Depends(get_current_user) # <-- Injected dynamically now!
+):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
         cart = Cart(user_id=user_id)
@@ -27,7 +40,6 @@ def add_to_cart(item: CartItemRequest, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(cart)
         
-    # 2. Check if the product is already in the cart
     existing_item = db.query(CartItem).filter(
         CartItem.cart_id == cart.id, 
         CartItem.product_id == item.product_id
@@ -43,8 +55,7 @@ def add_to_cart(item: CartItemRequest, db: Session = Depends(get_db)):
     return {"status": "success", "message": "Item added to cart"}
 
 @router.get("/")
-def view_cart(db: Session = Depends(get_db)):
-    user_id = 1
+def view_cart(db: Session = Depends(get_db), user_id: int = Depends(get_current_user)):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart or not cart.items:
         return {"cart_id": None, "items": []}
