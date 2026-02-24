@@ -4,7 +4,6 @@ __pycache__
 venv/
 .env
 .git
-Dockerfile
 APIs/__pycache__
 APIs/*.pyc
 models/__pycache__
