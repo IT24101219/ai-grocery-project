@@ -1,3 +1,6 @@
 # backend/models/__init__.py
-from .orders import Order, OrderItem, OrderStatusHistory, OrderDelivery
-from .cart import Cart, CartItem
+import pkgutil
+import importlib
+
+for _, module_name, _ in pkgutil.iter_modules(__path__):
+    importlib.import_module(f"{__name__}.{module_name}")

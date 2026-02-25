@@ -7,3 +7,6 @@ venv/
 APIs/__pycache__
 APIs/*.pyc
 models/__pycache__
+.gitignore
+models/user_management.py
+APIs/userManagement.py

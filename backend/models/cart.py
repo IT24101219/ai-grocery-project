@@ -14,7 +14,7 @@ class Cart(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # We enforce unique=True so a user can't accidentally create multiple active carts
-    user_id = Column(Integer, unique=True, nullable=False) 
+    user_id = Column(Integer, ForeignKey("users.user_id"), unique=True, nullable=False)    
     
     # Tracking when the cart was last updated is useful for "abandoned cart" features
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

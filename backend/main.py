@@ -3,14 +3,20 @@ from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import engine, get_db, Base
 from models import * 
-from APIs import cart, orders
+import importlib
+import pkgutil
+import APIs  
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Ransara Supermarket API")
 
-app.include_router(cart.router)
-app.include_router(orders.router)
+for _, module_name, _ in pkgutil.iter_modules(APIs.__path__):
+    module = importlib.import_module(f"APIs.{module_name}")
+    
+
+    if hasattr(module, "router"):
+        app.include_router(module.router)
 
 @app.get("/")
 def root():
