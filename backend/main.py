@@ -1,13 +1,26 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import text
+from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Query
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
-from database import engine, get_db, Base
-from models import * 
+from sqlalchemy import text
+from typing import List, Optional
+import io, csv, time
+
+import models, schemas, crud  # keep models imported so tables are registered
+from database import engine, get_db, SessionLocal, Base
 from APIs import cart, orders
 
 Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Ransara Supermarket API")
+app = FastAPI(title="Ransara Supermarket & Supplier Management API", version="2.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(cart.router)
 app.include_router(orders.router)
@@ -23,20 +36,6 @@ def test_database_connection(db: Session = Depends(get_db)):
         return {"status": "success", "message": "Successfully connected to PostgreSQL!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
-
-# new
-
-from fastapi import FastAPI, Depends, HTTPException, UploadFile, File, Query
-from fastapi.responses import StreamingResponse
-from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.orm import Session
-from sqlalchemy import text
-from typing import List, Optional
-import io, csv, time
-
-import models, schemas, crud  # keep models imported so tables are registered
-from database import SessionLocal, engine, Base
-
 
 def wait_for_db(max_retries: int = 30, delay_seconds: float = 1.0):
     """
@@ -55,30 +54,10 @@ def wait_for_db(max_retries: int = 30, delay_seconds: float = 1.0):
     raise RuntimeError(f"Database not ready after retries: {last_err}")
 
 
-app = FastAPI(title="Supplier Management API", version="2.0")
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-
 @app.on_event("startup")
 def on_startup():
-    # Wait for DB, then create tables
+    # Wait for DB
     wait_for_db()
-    Base.metadata.create_all(bind=engine)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 #  SUPPLIERS  CRUD
 

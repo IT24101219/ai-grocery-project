@@ -15,7 +15,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
 
   backend:
-    build: 
+    build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: grocery_fastapi_backend
@@ -34,8 +34,8 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: grocery_react_frontend
-    # Assuming standard Vite or Create React App dev server
-    command: npm run dev 
+    # Install modules just in case package.json changed but anonymous volume has stale node_modules
+    command: sh -c "npm install && npm run dev"
     volumes:
       - ./frontend:/app
       - /app/node_modules
