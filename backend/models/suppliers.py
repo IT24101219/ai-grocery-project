@@ -1,3 +1,4 @@
+# backend/models/suppliers.py
 from sqlalchemy import Column, Integer, String, Float, DateTime, Text, ForeignKey, Table, Date, Boolean
 from sqlalchemy.orm import relationship
 from datetime import datetime
@@ -11,6 +12,7 @@ suppliers_categories = Table(
     Column("category_id", Integer, ForeignKey("supplier_categories.id"), primary_key=True)
 )
 
+# category table
 class SupplierCategory(Base):
     __tablename__ = "supplier_categories"
     id = Column(Integer, primary_key=True, index=True)
@@ -18,7 +20,7 @@ class SupplierCategory(Base):
     
     suppliers = relationship("Supplier", secondary=suppliers_categories, back_populates="categories")
 
-
+# supplier table
 class Supplier(Base):
     __tablename__ = "suppliers"
 
@@ -36,14 +38,14 @@ class Supplier(Base):
     address = Column(Text, default="")
 
     # Classification
-    category = Column(String(500), default="")        # comma-separated list of categories
+    category = Column(String(500), default="")
     paymentTerms = Column(String(50), default="")
     importanceLevel = Column(String(50), default="Normal")
     status = Column(String(50), default="Active")
 
     # Performance
-    delivery_day = Column(Integer, default=0)             # days
-    onTimeRate = Column(Float, default=0.0)           # 0 - 100  (%)
+    delivery_day = Column(Integer, default=0)
+    onTimeRate = Column(Float, default=0.0)
     totalOrders = Column(Integer, default=0)
     lateDeliveries = Column(Integer, default=0)
     score = Column(Integer, default=50)
@@ -61,6 +63,7 @@ class Supplier(Base):
     orders = relationship("SupplierOrder", back_populates="supplier", cascade="all, delete")
     deliveries = relationship("SupplierDelivery", back_populates="supplier", cascade="all, delete")
 
+# order table
 class SupplierOrder(Base):
     __tablename__ = "supplier_orders"
     id = Column(Integer, primary_key=True, index=True)
@@ -71,6 +74,7 @@ class SupplierOrder(Base):
     
     supplier = relationship("Supplier", back_populates="orders")
 
+# delivery table
 class SupplierDelivery(Base):
     __tablename__ = "supplier_deliveries"
     id = Column(Integer, primary_key=True, index=True)
