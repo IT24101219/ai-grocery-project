@@ -1,9 +1,9 @@
-# backend/APIs/cart.py
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from models.cart import Cart, CartItem
+from APIs.auth import get_current_user
 
 router = APIRouter(
     prefix="/cart",
@@ -15,23 +15,19 @@ class CartItemRequest(BaseModel):
     product_id: int
     quantity: int
 
-# --- THE AUTHENTICATION BRIDGE ---
-def get_current_user():
-    """
-    Placeholder dependency. 
-    Right now, it just returns user_id = 1. 
-    Later, your teammate will update this single function to decode a real JWT token 
-    and fetch the real User object from the database!
-    """
-    return 1 
-# ---------------------------------
-
+# --- Temporary Mock Data so the Cart has prices for checkout ---
+MOCK_PRODUCTS = {
+    1: {"name": "Fresh Organic Apples", "price": 450.0},
+    2: {"name": "Whole Wheat Bread", "price": 120.0},
+    3: {"name": "Fresh Milk 1L", "price": 300.0}
+}
+# ---------------------------------------------------------------
 
 @router.post("/add")
 def add_to_cart(
     item: CartItemRequest, 
     db: Session = Depends(get_db), 
-    user_id: int = Depends(get_current_user) # <-- Injected dynamically now!
+    user_id: int = Depends(get_current_user)
 ):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
@@ -58,17 +54,37 @@ def add_to_cart(
 def view_cart(db: Session = Depends(get_db), user_id: int = Depends(get_current_user)):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart or not cart.items:
-        return {"cart_id": None, "items": []}
+        return {"cart_id": None, "items": [], "total": 0}
+        
+    # Inject Mock Product Details so React has names and prices
+    enriched_items = []
+    total = 0
+    for i in cart.items:
+        product_info = MOCK_PRODUCTS.get(i.product_id, {"name": "Unknown", "price": 0})
+        subtotal = product_info["price"] * i.quantity
+        total += subtotal
+        
+        enriched_items.append({
+            "item_id": i.id,
+            "product_id": i.product_id, 
+            "quantity": i.quantity,
+            "name": product_info["name"],
+            "price": product_info["price"],
+            "subtotal": subtotal
+        })
         
     return {
         "cart_id": cart.id,
-        "items": [{"product_id": i.product_id, "quantity": i.quantity} for i in cart.items]
+        "items": enriched_items,
+        "total": total
     }
 
 @router.put("/update")
-def update_cart_item(item: CartItemRequest, db: Session = Depends(get_db)):
-    user_id = 1 # Hardcoded for now
-    
+def update_cart_item(
+    item: CartItemRequest, 
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user) # <-- Fixed the hardcoded user
+):
     # 1. Find the user's cart
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
@@ -95,9 +111,11 @@ def update_cart_item(item: CartItemRequest, db: Session = Depends(get_db)):
     return {"status": "success", "message": message}
 
 @router.delete("/remove/{product_id}")
-def remove_from_cart(product_id: int, db: Session = Depends(get_db)):
-    user_id = 1 # Hardcoded for now
-    
+def remove_from_cart(
+    product_id: int, 
+    db: Session = Depends(get_db),
+    user_id: int = Depends(get_current_user) # <-- Fixed the hardcoded user
+):
     cart = db.query(Cart).filter(Cart.user_id == user_id).first()
     if not cart:
         raise HTTPException(status_code=404, detail="Cart not found")

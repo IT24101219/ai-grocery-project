@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware # 
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 from database import engine, get_db, Base
@@ -10,6 +11,14 @@ import APIs
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Ransara Supermarket API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:5173"], 
+    allow_credentials=True,
+    allow_methods=["*"], 
+    allow_headers=["*"], 
+)
 
 for _, module_name, _ in pkgutil.iter_modules(APIs.__path__):
     module = importlib.import_module(f"APIs.{module_name}")
