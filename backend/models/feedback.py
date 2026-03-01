@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, Text, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from database import Base
 
@@ -11,3 +11,4 @@ class Feedback(Base):
     rating = Column(Integer, nullable=False)
     reply = Column(Text, nullable=True)
     role = Column(String, default="user")  # user or admin
+    offensive = Column(Boolean, default=False)  # Flag for offensive content
