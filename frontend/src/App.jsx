@@ -10,7 +10,7 @@ export default function App() {
   const [role, setRole] = useState("user");
   const [userName, setUserName] = useState("");
   const [message, setMessage] = useState("");
-  const [rating, setRating] = useState(5);
+  const [rating, setRating] = useState(0);
 
   const [productName, setProductName] = useState("");
   const [filterProduct, setFilterProduct] = useState("all");
@@ -18,7 +18,7 @@ export default function App() {
   const [feedbacks, setFeedbacks] = useState([]);
   const [editingId, setEditingId] = useState(null);
 
-  // ✅ admin reply states
+  //  admin reply states
   const [replyingId, setReplyingId] = useState(null);
   const [replyText, setReplyText] = useState("");
 
@@ -37,7 +37,7 @@ export default function App() {
     setProductName("");
     setEditingId(null);
 
-    // ✅ close reply box too
+    //  close reply box too
     setReplyingId(null);
     setReplyText("");
   };
@@ -46,13 +46,11 @@ export default function App() {
     if (!userName.trim()) return alert("Please enter your name");
     if (role === "user" && !message.trim()) return alert("Please write feedback");
     if (role === "admin") return alert("Admin cannot create feedback");
-
-    // product is required for product-by-product feedback
-    if (!productName.trim()) return alert("Please enter product name");
+    if (rating === 0) return alert("Please select a rating");
 
     const payload = {
       user_name: userName.trim(),
-      product_name: productName.trim(),
+      product_name: productName.trim() || "All Products",
       message: message.trim(),
       rating: Number(rating),
     };
@@ -78,7 +76,6 @@ export default function App() {
     setReplyText("");
      window.scrollTo({ top: 0, behavior: "smooth" });
   };
-
   const cancelEdit = () => resetForm();
 
   const deleteAsUser = async (fbId) => {
@@ -155,14 +152,14 @@ export default function App() {
           </div>
                 <br />
           <div>
-            <label className="label">Product Name</label>
+            <label className="label">Product ID</label>
             <input
               value={productName}
               onChange={(e) => setProductName(e.target.value)}
-              placeholder="ex: Milk / Rice / Biscuit"
+              placeholder="ex: 101 / 102 / 103"
               disabled={role === "admin"}
             />
-            <p className="hint">Write the product name you are giving feedback about.</p>
+            <p className="hint">Write the product ID you are giving feedback about.</p>
           </div>
               
             <br /><br /><br />
@@ -274,7 +271,6 @@ export default function App() {
                   )}
              </div>
           )}
-
               <div className="actions">
                 {/* Customer actions */}
                 {canUserEdit(fb) && (
