@@ -1,3 +1,4 @@
+from sqlalchemy.sql import func
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -25,16 +26,18 @@ def detect_offensive(message: str) -> str:
 
 class FeedbackCreate(BaseModel):
     user_name: str = Field(..., min_length=1)
+    product_name: str = Field(..., min_length=1) 
     message: str = Field(..., min_length=1)
     rating: int = Field(..., ge=1, le=5)
 
 class FeedbackUpdate(BaseModel):
     user_name: str = Field(..., min_length=1)
+    product_name: str = Field(..., min_length=1) 
     message: str = Field(..., min_length=1)
     rating: int = Field(..., ge=1, le=5)
 
 class FeedbackReply(BaseModel):
-    reply: str = Field(..., min_length=1)
+    reply: str = ""
 
 # Router
 
@@ -53,6 +56,7 @@ def create_feedback(payload: FeedbackCreate, role: str = Query("user"), db: Sess
 
     new_feedback = Feedback(
         user_name=payload.user_name,
+        product_name=payload.product_name, 
         message=payload.message,      #  keep original message in DB
         rating=payload.rating,
         offensive=offensive_flag
@@ -65,9 +69,14 @@ def create_feedback(payload: FeedbackCreate, role: str = Query("user"), db: Sess
 # Get All Feedbacks (User/Admin)
 
 @router.get("/feedback")
-def get_feedbacks(db: Session = Depends(get_db)):
-    return db.query(Feedback).order_by(Feedback.id.desc()).all()
-
+def get_feedbacks(
+    product: str = Query("all"),
+    db: Session = Depends(get_db)
+):
+    q = db.query(Feedback)
+    if product != "all":
+        q = q.filter(Feedback.product_name == product)
+    return q.order_by(Feedback.id.desc()).all()
 
 # Update Feedback (Only Owner)
 
@@ -83,10 +92,11 @@ def update_feedback(
         raise HTTPException(status_code=404, detail="Feedback not found")
 
     # Only owner + role=user can update
-    if role != "user" or feedback.user_name != payload.user_name:
+    if role != "user" or feedback.user_name.strip().lower() != payload.user_name.strip().lower():
         raise HTTPException(status_code=403, detail="Not allowed to update this feedback")
 
     result = detect_offensive(payload.message)
+    feedback.product_name = payload.product_name
     feedback.offensive = (result == "offensive")
     feedback.message = payload.message
     feedback.rating = payload.rating
@@ -112,7 +122,7 @@ def delete_feedback(
         raise HTTPException(status_code=404, detail="Feedback not found")
 
     if role == "user":
-        if feedback.user_name != user_name:
+        if feedback.user_name.strip().lower() != user_name.strip().lower():
             raise HTTPException(status_code=403, detail="You can delete only your own feedback")
     elif role == "admin":
         if not feedback.offensive:
@@ -140,8 +150,19 @@ def reply_feedback(
     feedback = db.query(Feedback).filter(Feedback.id == feedback_id).first()
     if not feedback:
         raise HTTPException(status_code=404, detail="Feedback not found")
+    
+    clean_reply = payload.reply.strip() if payload.reply else ""
 
-    feedback.reply = payload.reply
+    if clean_reply == "":
+        feedback.reply = None
+        feedback.replied_at = None
+    else:
+        feedback.reply = clean_reply
+        feedback.replied_at = func.now()
+
+    # ✅ allow empty reply (means delete reply)
+    feedback.reply = payload.reply.strip() if payload.reply else None
+
     db.commit()
     db.refresh(feedback)
     return feedback
