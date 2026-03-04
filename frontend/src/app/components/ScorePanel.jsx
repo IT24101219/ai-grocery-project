@@ -1,6 +1,7 @@
-import { Brain } from "lucide-react";
+import { Activity } from "lucide-react";
 
 function ScoreGauge({ score }) {
+    // Score is 0 to 10
     const pct = Math.min(100, Math.max(0, (score / 10) * 100));
     const color =
         score >= 8 ? "#10b981" :
@@ -28,25 +29,25 @@ function ScoreGauge({ score }) {
                     {score.toFixed(1)}
                 </text>
             </svg>
-            <div className="text-xs text-slate-500">/ 10.0 reliability score</div>
+            <div className="text-xs text-slate-500">/ 10.0 rating</div>
         </div>
     );
 }
 
-export default function AIPanel() {
+export default function ScorePanel({ score }) {
     return (
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-4">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-600 text-white">
-                    <Brain size={16} />
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-600 text-white">
+                    <Activity size={16} />
                 </div>
                 <div>
-                    <div className="text-sm font-bold text-slate-900">AI Reliability Score</div>
-                    <div className="text-xs text-slate-500">Machine learning prediction</div>
+                    <div className="text-sm font-bold text-slate-900">Reliability Score</div>
+                    <div className="text-xs text-slate-500">Data-driven performance metric</div>
                 </div>
             </div>
             <div className="flex flex-col items-center gap-2">
-                <ScoreGauge score={0} />
+                <ScoreGauge score={score || 0} />
             </div>
         </div>
     );

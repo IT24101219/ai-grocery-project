@@ -12,7 +12,7 @@ class SupplierCreate(BaseModel):
     email: str = ""
     phone: str = ""
     address: str = ""
-    category: str = ""
+    categories: List[str] = []          # list of category names (e.g. ["Dairy", "Frozen"])
     paymentTerms: str = ""
     importanceLevel: str = "Normal"
     status: str = "Active"
@@ -66,6 +66,7 @@ class SupplierOrderOut(SupplierOrderCreate):
 
 class SupplierDeliveryCreate(BaseModel):
     supplier_id: int
+    order_id: Optional[int] = None       # links this delivery to the specific order it fulfils
     delivery_date: Optional[date] = None
     expected_date: date
     delivered_on_time: bool = True
@@ -87,7 +88,7 @@ class SupplierOut(BaseModel):
     email: str = ""
     phone: str = ""
     address: str = ""
-    category: str = ""
+    categories: List[str] = []          # serialized as list of category name strings
     paymentTerms: str = ""
     importanceLevel: str = "Normal"
     status: str = "Active"
@@ -100,17 +101,15 @@ class SupplierOut(BaseModel):
     updated_at: Optional[datetime] = None
     updated_by: str = "system"
 
+    @field_validator("categories", mode="before")
+    @classmethod
+    def serialize_categories(cls, v):
+        """Convert list of SupplierCategory ORM objects → list of name strings."""
+        if v and hasattr(v[0], "name"):
+            return [cat.name for cat in v]
+        return v or []
+
     class Config:
         from_attributes = True
 
 
-class PredictionOut(BaseModel):
-    supplier_id: int
-    company_name: str
-    predicted_reliability_score: float
-    rating: str
-
-
-class RecommendationOut(BaseModel):
-    category: str
-    top_suppliers: list

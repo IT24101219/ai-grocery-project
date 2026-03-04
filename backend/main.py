@@ -57,7 +57,7 @@ def wait_for_db(max_retries: int = 30, delay_seconds: float = 1.0):
             time.sleep(delay_seconds)
     raise RuntimeError(f"Database not ready after retries: {last_err}")
 
-# Wait for a database and then run app
+# Wait for database to be ready, then start app
 @app.on_event("startup")
 def on_startup():
     wait_for_db()

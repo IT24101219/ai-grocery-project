@@ -95,6 +95,13 @@ def delete_supplier(supplier_id: int, db: Session = Depends(get_db)):
     return result
 
 
+#  CATEGORIES
+@router.get("/categories", response_model=List[schemas.SupplierCategoryOut], tags=["Suppliers"])
+def list_categories(db: Session = Depends(get_db)):
+    """Return all available supplier categories"""
+    return db.query(models.SupplierCategory).order_by(models.SupplierCategory.name).all()
+
+
 #  ANALYTICS
 @router.get("/analytics", tags=["Suppliers"])
 def analytics(db: Session = Depends(get_db)):
@@ -114,9 +121,8 @@ def analytics(db: Session = Depends(get_db)):
 
     by_category = {}
     for s in suppliers:
-        cats = [c.strip() for c in (s.category or "").split(",") if c.strip()]
-        for cat in cats:
-            by_category[cat] = by_category.get(cat, 0) + 1
+        for cat in s.categories:             
+            by_category[cat.name] = by_category.get(cat.name, 0) + 1
     category_chart = [{"label": k, "value": v} for k, v in sorted(by_category.items(), key=lambda x: -x[1])]
 
     sorted_active = sorted(active_list, key=lambda s: s.reliabilityScore or 0, reverse=True)
@@ -143,36 +149,5 @@ def analytics(db: Session = Depends(get_db)):
 
 
 
-#  AI / ML ENDPOINTS
-@router.post("/ai/train", tags=["AI"])
-def train_ai_model():
-    return {"status": "not_implemented", "message": "AI model training will be connected in a future release."}
 
 
-@router.get("/ai/predict/{supplier_id}", tags=["AI"])
-def predict_supplier_reliability(supplier_id: int, db: Session = Depends(get_db)):
-    supplier = crud.get_supplier(db, supplier_id)
-    if not supplier:
-        raise HTTPException(status_code=404, detail="Supplier not found")
-    return {
-        "supplier_id": supplier_id,
-        "company_name": supplier.companyName,
-        "predicted_reliability_score": 0,
-        "rating": "N/A",
-        "message": "AI model not yet implemented.",
-    }
-
-
-@router.post("/ai/predict-all", tags=["AI"])
-def predict_all_suppliers(db: Session = Depends(get_db)):
-    suppliers = crud.get_suppliers(db)
-    return {
-        "updated": 0,
-        "total": len(suppliers),
-        "message": "AI model not yet implemented. Scores will be calculated once the model is connected.",
-    }
-
-
-@router.get("/ai/recommendations", tags=["AI"])
-def get_recommendations(db: Session = Depends(get_db)):
-    return {"message": "AI recommendations will be available once the model is connected.", "data": {}}

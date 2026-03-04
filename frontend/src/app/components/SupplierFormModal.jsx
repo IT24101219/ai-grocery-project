@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { X, CheckSquare, Square } from "lucide-react";
+import { X, CheckSquare, Square, Plus } from "lucide-react";
+
 
 const CATEGORIES = [
     "Dairy", "Vegetables", "Fruits", "Frozen", "Snacks",
     "Beverages", "Bakery", "Meat", "Seafood", "Condiments",
 ];
 
-const PAYMENT_TERMS = ["Cash", "7 days", "14 days", "30 days", "60 days"];
+const PAYMENT_TERMS = ["Cash", "Card", "Bank Transfer", "Other"];
 const PRIORITIES = ["Normal", "Preferred", "Critical"];
 
 function genCode() {
@@ -22,7 +23,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
         email: "",
         phone: "",
         address: "",
-        category: "",
+        categories: [],            // array of category name strings
         paymentTerms: "",
         importanceLevel: "Normal",
         status: "Active",
@@ -35,6 +36,10 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
     const [form, setForm] = useState(empty);
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
+    const [customCats, setCustomCats] = useState([]);   // user-added categories
+    const [newCatInput, setNewCatInput] = useState("");
+    const [showCatAdd, setShowCatAdd] = useState(false);
+
 
     useEffect(() => {
         if (open) {
@@ -48,8 +53,12 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                 : empty;
             setForm(base);
             setErrors({});
+            setCustomCats([]);
+            setNewCatInput("");
+            setShowCatAdd(false);
         }
     }, [open, initial, empty]);
+
 
     if (!open) return null;
 
@@ -58,15 +67,35 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
         setErrors((e) => ({ ...e, [k]: undefined }));
     };
 
-    // Multi-select category toggle
-    const selectedCats = form.category
-        ? form.category.split(",").map((c) => c.trim()).filter(Boolean)
-        : [];
+    // All available categories = defaults + user-added custom ones
+    const allCats = [...CATEGORIES, ...customCats];
+
+    // Multi-select category toggle — works with categories:string[] in form state
+    const selectedCats = Array.isArray(form.categories) ? form.categories : [];
     const toggleCat = (cat) => {
         const next = selectedCats.includes(cat)
             ? selectedCats.filter((c) => c !== cat)
             : [...selectedCats, cat];
-        set("category", next.join(", "));
+        set("categories", next);
+    };
+
+    const addCustomCat = () => {
+        const name = newCatInput.trim();
+        if (!name) return;
+        if (!allCats.includes(name)) {
+            setCustomCats((prev) => [...prev, name]);
+        }
+        // Auto-select the new category
+        if (!selectedCats.includes(name)) {
+            set("categories", [...selectedCats, name]);
+        }
+        setNewCatInput("");
+        setShowCatAdd(false);
+    };
+
+    const handleCatKeyDown = (e) => {
+        if (e.key === "Enter") { e.preventDefault(); addCustomCat(); }
+        if (e.key === "Escape") { setShowCatAdd(false); setNewCatInput(""); }
     };
 
     const validate = () => {
@@ -93,7 +122,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                 email: form.email || "",
                 phone: form.phone || "",
                 address: form.address || "",
-                category: form.category || "",
+                categories: Array.isArray(form.categories) ? form.categories : [],
                 paymentTerms: form.paymentTerms || "",
                 importanceLevel: form.importanceLevel || "Normal",
                 status: form.status || "Active",
@@ -255,7 +284,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                         {/* Categories */}
                         <Field label="Categories (select all that apply)" full>
                             <div className="flex flex-wrap gap-2 mt-1">
-                                {CATEGORIES.map((cat) => {
+                                {allCats.map((cat) => {
                                     const active = selectedCats.includes(cat);
                                     return (
                                         <button
@@ -272,6 +301,42 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                                         </button>
                                     );
                                 })}
+
+                                {/* + Add new category */}
+                                {showCatAdd ? (
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            autoFocus
+                                            value={newCatInput}
+                                            onChange={(e) => setNewCatInput(e.target.value)}
+                                            onKeyDown={handleCatKeyDown}
+                                            placeholder="Category name…"
+                                            className="rounded-full border border-emerald-400 px-3 py-1 text-xs outline-none focus:ring-2 focus:ring-emerald-200 w-36"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={addCustomCat}
+                                            className="rounded-full bg-emerald-600 px-3 py-1 text-xs font-semibold text-white hover:bg-emerald-700 transition-colors"
+                                        >
+                                            Add
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => { setShowCatAdd(false); setNewCatInput(""); }}
+                                            className="rounded-full border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCatAdd(true)}
+                                        className="flex items-center gap-1 rounded-full border border-dashed border-slate-300 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-emerald-400 hover:text-emerald-600 transition-colors"
+                                    >
+                                        <Plus size={12} /> New
+                                    </button>
+                                )}
                             </div>
                             {selectedCats.length > 0 && (
                                 <div className="mt-2 text-xs text-emerald-600 font-medium">

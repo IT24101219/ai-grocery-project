@@ -77,7 +77,7 @@ export default function Home() {
                         </div>
                         <div className="text-slate-600">
                             Manage suppliers with{" "}
-                            <span className="font-extrabold text-emerald-600">AI driven</span>{" "}
+                            <span className="font-extrabold text-emerald-600">Data driven</span>{" "}
                             dashboard
                         </div>
                     </div>
@@ -209,10 +209,10 @@ export default function Home() {
                         {/* Brand */}
                         <div>
                             <div className="flex items-center gap-2">
-                <span className="rounded-lg bg-emerald-600 p-2 text-white">
-                  <Truck size={20} />
-                </span>
-                                <span className="text-lg font-extrabold text-slate-900">FreshSupply</span>
+                                <span className="rounded-lg bg-emerald-600 p-2 text-white">
+                                    <Truck size={20} />
+                                </span>
+                                <span className="text-lg font-extrabold text-slate-900">Ransara Supermarket</span>
                             </div>
                             <p className="mt-4 text-sm text-slate-600">
                                 Smart supplier management for modern grocery supply chains.
@@ -258,7 +258,7 @@ export default function Home() {
                     </div>
 
                     <div className="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-500">
-                        © {new Date().getFullYear()} FreshSupply • Supplier Management System
+                        © {new Date().getFullYear()} Ransara Supermarket • Supplier Management System
                     </div>
                 </div>
             </footer>

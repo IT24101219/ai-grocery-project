@@ -105,7 +105,7 @@ export default function Analytics() {
                         <h1 className="text-2xl font-extrabold text-slate-900">Analytics Dashboard</h1>
                     </div>
                     <p className="mt-1 text-sm text-slate-500">
-                        Performance analysis, rankings, and AI-powered supplier insights.
+                        Performance analysis, rankings, and data-driven supplier insights.
                     </p>
                 </div>
                 <button
@@ -148,7 +148,7 @@ export default function Analytics() {
                             {bestSupplier.name && <div className="text-xs text-slate-500 truncate">{bestSupplier.name}</div>}
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${reliabilityColor(0).badge}`}>
-                                    AI Score: 0.0 / 10
+                                    Score: 0.0 / 10
                                 </span>
                                 <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs text-slate-600">
                                     {ratingLabel(0)}
@@ -190,7 +190,7 @@ export default function Analytics() {
                             {worstSupplier.name && <div className="text-xs text-slate-500 truncate">{worstSupplier.name}</div>}
                             <div className="mt-3 flex flex-wrap gap-2">
                                 <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${reliabilityColor(0).badge}`}>
-                                    AI Score: 0.0 / 10
+                                    Score: 0.0 / 10
                                 </span>
                                 <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs text-slate-600">
                                     {ratingLabel(0)}
@@ -256,8 +256,8 @@ export default function Analytics() {
                             onChange={(e) => setSortBy(e.target.value)}
                             className="appearance-none rounded-xl border border-slate-200 bg-slate-50 pl-3 pr-8 py-2 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-400"
                         >
-                            <option value="reliability-desc">AI Score ↓ (Best first)</option>
-                            <option value="reliability-asc">AI Score ↑ (Worst first)</option>
+                            <option value="reliability-desc">Score ↓ (Best first)</option>
+                            <option value="reliability-asc">Score ↑ (Worst first)</option>
                             <option value="lead-asc">Delivery Day ↑</option>
                             <option value="lead-desc">Delivery Day ↓</option>
                             <option value="late-asc">Late Deliveries ↑</option>
@@ -276,7 +276,7 @@ export default function Analytics() {
                 <div className="mb-4 flex items-center gap-2">
                     <Star size={16} className="text-amber-500" />
                     <div className="font-bold text-slate-900">Supplier Performance Chart</div>
-                    <span className="ml-auto text-xs text-slate-400">AI Reliability Score (0–10)</span>
+                    <span className="ml-auto text-xs text-slate-400">Reliability Score (0–10)</span>
                 </div>
                 {perfChartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={Math.max(220, perfChartData.length * 36)}>
@@ -285,7 +285,7 @@ export default function Analytics() {
                             <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11 }} />
                             <YAxis dataKey="label" type="category" width={130} tick={{ fontSize: 11 }} />
                             <Tooltip
-                                formatter={(v) => [`${v} / 10`, "AI Reliability Score"]}
+                                formatter={(v) => [`${v} / 10`, "Reliability Score"]}
                                 labelFormatter={(l) => l}
                             />
                             <Bar dataKey="value" radius={[0, 6, 6, 0]}>
@@ -311,14 +311,14 @@ export default function Analytics() {
 
             {/* ── Top 5 vs Bottom 5 Charts ── */}
             <div className="grid gap-6 lg:grid-cols-2">
-                <ChartCard title="🏆 Top 5 Best Suppliers" subtitle="By AI reliability score">
+                <ChartCard title="🏆 Top 5 Best Suppliers" subtitle="By reliability score">
                     {analytics?.top5?.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
                             <BarChart data={analytics.top5.map(d => ({ ...d, value: 0 }))} layout="vertical" barSize={16}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                                 <YAxis dataKey="label" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={() => ["N/A", "AI Score (not connected)"]} />
+                                <Tooltip formatter={() => ["N/A", "Score"]} />
                                 <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#10b981" />
                             </BarChart>
                         </ResponsiveContainer>
@@ -332,7 +332,7 @@ export default function Analytics() {
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
                                 <YAxis dataKey="label" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={() => ["N/A", "AI Score (not connected)"]} />
+                                <Tooltip formatter={() => ["N/A", "Score"]} />
                                 <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#f59e0b" />
                             </BarChart>
                         </ResponsiveContainer>

@@ -1,18 +1,18 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Pencil, Mail, Phone, MapPin, Tag, Clock, CreditCard, ShieldCheck, Calendar } from "lucide-react";
 import { useSuppliers } from "../context/SupplierContext.jsx";
-import AIPanel from "../components/AIPanel.jsx";
+import ScorePanel from "../components/ScorePanel.jsx";
 import { useState } from "react";
 import SupplierFormModal from "../components/SupplierFormModal.jsx";
+import SupplierDeliverySection from "../components/SupplierDeliverySection.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 
-function CategoryChips({ category }) {
-    if (!category) return <span className="text-slate-400">—</span>;
-    const cats = category.split(",").map((c) => c.trim()).filter(Boolean);
+function CategoryChips({ categories }) {
+    if (!categories || categories.length === 0) return <span className="text-slate-400">—</span>;
     return (
-        <div className="flex flex-wrap gap-1.5">
-            {cats.map((c) => (
-                <span key={c} className="rounded-full bg-emerald-50 border border-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+        <div className="flex flex-wrap gap-1">
+            {categories.map((c) => (
+                <span key={c} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
                     {c}
                 </span>
             ))}
@@ -52,7 +52,7 @@ function ScoreBar({ label, value, max = 100, color = "emerald" }) {
 
 export default function SupplierDetails() {
     const { id } = useParams();
-    const { getSupplierById, updateSupplier } = useSuppliers();
+    const { getSupplierById, updateSupplier, loadSuppliers } = useSuppliers();
     const toast = useToast();
     const supplier = getSupplierById(id);
 
@@ -137,7 +137,7 @@ export default function SupplierDetails() {
                             {/* Categories */}
                             <div className="mt-5">
                                 <div className="text-xs font-semibold text-slate-500 mb-2">Categories</div>
-                                <CategoryChips category={supplier.category} />
+                                <CategoryChips categories={supplier.categories} />
                             </div>
                         </div>
 
@@ -155,11 +155,18 @@ export default function SupplierDetails() {
                         {/* Performance */}
                         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                             <div className="text-sm font-bold text-slate-900 mb-4">Performance Metrics</div>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-3">
                                 <Metric label="Total Orders" value={supplier.totalOrders ?? 0} />
                                 <Metric label="Late Deliveries" value={supplier.lateDeliveries ?? 0} />
+                                <Metric label="On-Time Rate" value={`${supplier.onTimeRate ?? 0}%`} />
                             </div>
                         </div>
+
+                        {/* Deliveries */}
+                        <SupplierDeliverySection
+                            supplierId={supplier.id}
+                            onDeliveriesChanged={() => loadSuppliers()}
+                        />
 
                         {/* Audit info */}
                         <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
@@ -191,9 +198,9 @@ export default function SupplierDetails() {
                         </div>
                     </div>
 
-                    {/* Right panel – AI */}
+                    {/* Right panel – Score */}
                     <div>
-                        <AIPanel supplierId={supplier.id} score={supplier.reliabilityScore || 0} supplierData={supplier} />
+                        <ScorePanel score={supplier.reliabilityScore || 0} />
                     </div>
                 </div>
             )}
