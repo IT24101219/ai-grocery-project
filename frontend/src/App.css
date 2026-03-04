@@ -5,20 +5,25 @@
 .page{
   max-width: 980px;
   margin: 24px auto;
-  padding: 0 16px 40px;
+  padding: 10px 16px 40px;
+  color: darkred;
+  
 }
 
 .topbar{
   display:flex;
   justify-content: space-between;
   align-items:flex-start;
-  gap: 16px;
+  gap: 40px;
   margin-bottom: 18px;
 }
 
 h1{
   margin: 0;
   font-size: 30px;
+}
+h2{
+  color: black;
 }
 .sub{
   margin: 6px 0 0;
@@ -33,9 +38,11 @@ h1{
 }
 
 .label{
+  text-transform: uppercase;
   font-size: 14px;
   font-weight: 600;
-  color: red;
+  color: black;
+  
 }
 
 .hint{
@@ -87,7 +94,7 @@ textarea{
 }
 
 button{
-  border: 1px solid black;
+  border: 1px ;
   border-radius: 10px;
   padding: 10px 14px;
   font-weight: 700;
@@ -99,7 +106,7 @@ button{
 
 button.ghost{
   background: green;
-  border: 1px solid black;
+  
 }
 
 button.small{
@@ -108,7 +115,7 @@ button.small{
 }
 
 button.danger{
-  border: 1px solid #e1a5a5;
+  border: 1px black;
 }
 
 .listHeader{
@@ -154,7 +161,7 @@ button.danger{
 }
 
 .msg{
-  margin: 10px 0 0;
+  margin: 5px 0 ;
   line-height: 1.5;
 }
 
@@ -178,8 +185,8 @@ button.danger{
 .actions{
   display:flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 2px;
+  margin-top: 5px;
   align-items:center;
 }
 
@@ -195,4 +202,29 @@ button.danger{
   margin-top: 18px;
   color:#555;
   font-size: 12px;
+}
+
+.adminReplyBox {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.replyInput {
+  width: 100%;
+  min-height: 70px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  margin-bottom: 8px;
+}
+.stars {
+  font-size: 22px;   
+}
+
+.star {
+  color: #ccc;       
+}
+
+.star.filled {
+  color: gold;       
 }

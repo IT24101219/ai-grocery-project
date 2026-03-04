@@ -1,0 +1,122 @@
+.feedback-container {
+  max-width: 600px;
+  margin: 40px auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.feedback-container h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #2c3e50;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 30px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-form input,
+.feedback-form textarea,
+.feedback-form select {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.feedback-form textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.feedback-form button {
+  padding: 10px;
+  background-color: #27ae60;
+  color: white;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background 0.3s ease;
+}
+
+.feedback-form button:hover {
+  background-color: #219150;
+}
+
+.feedback-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.feedback-card {
+  background: #fff;
+  padding: 15px;
+  border-radius: 8px;
+  border-left: 4px solid #27ae60;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.feedback-header {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+  margin-bottom: 8px;
+}
+
+.admin-reply {
+  margin-top: 8px;
+  font-style: italic;
+  color: #e67e22;
+}
+
+.feedback-actions button {
+  margin-left: 5px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #3498db;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  transition: 0.3s;
+}
+
+.feedback-actions button:hover {
+  background: #2980b9;
+}
+
+.admin-reply-form {
+  display: flex;
+  gap: 5px;
+  margin-top: 5px;
+}
+
+.admin-reply-form input {
+  flex: 1;
+  padding: 5px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.admin-reply-form button {
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: none;
+  background: #e67e22;
+  color: white;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.admin-reply-form button:hover {
+  background: #d35400;
+}
