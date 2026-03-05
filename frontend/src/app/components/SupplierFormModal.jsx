@@ -30,7 +30,6 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
         delivery_day: "",
         totalOrders: "",
         lateDeliveries: "",
-        updated_by: "staff",
     }), []);
 
     const [form, setForm] = useState(empty);
@@ -129,7 +128,6 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                 delivery_day: form.delivery_day !== "" ? parseInt(form.delivery_day) || 0 : 0,
                 totalOrders: form.totalOrders !== "" ? parseInt(form.totalOrders) || 0 : 0,
                 lateDeliveries: form.lateDeliveries !== "" ? parseInt(form.lateDeliveries) || 0 : 0,
-                updated_by: "staff",
             };
             if (mode === "edit" && form.id) payload.id = form.id;
             await onSubmit(payload);

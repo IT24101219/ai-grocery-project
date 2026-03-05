@@ -5,7 +5,6 @@ import { useToast } from "../context/ToastContext.jsx";
 
 function DeliveryModal({ open, mode, initial, supplierId, onClose, onSave }) {
     const defaultForm = {
-        order_id: "",
         expected_date: "",
         delivery_date: "",
         delivered_on_time: true,
@@ -16,7 +15,7 @@ function DeliveryModal({ open, mode, initial, supplierId, onClose, onSave }) {
 
     useEffect(() => {
         if (open) {
-            setForm(initial ? { ...initial, order_id: initial.order_id || "", rating: initial.rating || "" } : defaultForm);
+            setForm(initial ? { ...initial, rating: initial.rating || "" } : defaultForm);
         }
     }, [open, initial]);
 
@@ -29,7 +28,6 @@ function DeliveryModal({ open, mode, initial, supplierId, onClose, onSave }) {
         try {
             const payload = {
                 supplier_id: supplierId,
-                order_id: form.order_id ? parseInt(form.order_id) : null,
                 expected_date: form.expected_date,
                 delivery_date: form.delivery_date || null,
                 delivered_on_time: form.delivered_on_time,
@@ -52,10 +50,7 @@ function DeliveryModal({ open, mode, initial, supplierId, onClose, onSave }) {
                     <button onClick={onClose} className="text-slate-500 hover:text-slate-800">✕</button>
                 </div>
                 <div className="p-6 space-y-4">
-                    <label className="block text-sm font-semibold text-slate-700">
-                        Related Order ID (Optional)
-                        <input type="number" value={form.order_id} onChange={e => set('order_id', e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-                    </label>
+
                     <label className="block text-sm font-semibold text-slate-700">
                         Expected Date *
                         <input type="date" required value={form.expected_date} onChange={e => set('expected_date', e.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
@@ -159,7 +154,6 @@ export default function SupplierDeliverySection({ supplierId, onDeliveriesChange
                             <tr className="border-b border-slate-200 text-xs text-slate-500">
                                 <th className="py-2 font-semibold">Expected</th>
                                 <th className="py-2 font-semibold">Actual</th>
-                                <th className="py-2 font-semibold">Order ID</th>
                                 <th className="py-2 font-semibold">Status</th>
                                 <th className="py-2 font-semibold text-right">Actions</th>
                             </tr>
@@ -169,7 +163,6 @@ export default function SupplierDeliverySection({ supplierId, onDeliveriesChange
                                 <tr key={d.id} className="hover:bg-slate-50 transition-colors">
                                     <td className="py-2.5 font-medium text-slate-700">{d.expected_date}</td>
                                     <td className="py-2.5 text-slate-600">{d.delivery_date || "—"}</td>
-                                    <td className="py-2.5 text-slate-500">{d.order_id ? `#${d.order_id}` : "—"}</td>
                                     <td className="py-2.5">
                                         {d.delivered_on_time ? (
                                             <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full"><CheckCircle2 size={12} /> On Time</span>

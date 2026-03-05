@@ -3,7 +3,6 @@ import Home from "./app/pages/Home.jsx";
 import Suppliers from "./app/pages/Suppliers.jsx";
 import SupplierDetails from "./app/pages/SupplierDetails.jsx";
 import Analytics from "./app/pages/Analytics.jsx";
-import Orders from "./app/pages/Orders.jsx";
 import Deliveries from "./app/pages/Deliveries.jsx";
 import AdminLayout from "./app/layout/AdminLayout.jsx";
 import { SupplierProvider } from "./app/context/SupplierContext.jsx";
@@ -20,7 +19,6 @@ export default function App() {
                         <Route path="/suppliers" element={<Suppliers />} />
                         <Route path="/suppliers/:id" element={<SupplierDetails />} />
                         <Route path="/analytics" element={<Analytics />} />
-                        <Route path="/orders" element={<Orders />} />
                         <Route path="/deliveries" element={<Deliveries />} />
                     </Route>
 

@@ -181,54 +181,9 @@ def get_supplier_rankings(db: Session = Depends(get_db)):
             "score":            round(s.reliabilityScore or 0, 2),
             "tier":             tier(s.reliabilityScore or 0),
             "onTimeRate":       round(s.onTimeRate or 0, 1),
-            "totalOrders":      s.totalOrders or 0,
-            "lateDeliveries":   s.lateDeliveries or 0,
         }
         for idx, s in enumerate(suppliers)
     ]
-
-
-# ── ORDERS ────────────────────────────────────────────────────────────────────
-
-@router.get("/orders", response_model=List[schemas.SupplierOrderOut], tags=["Orders"])
-def get_all_orders(db: Session = Depends(get_db)):
-    """Get all purchase orders across all suppliers."""
-    return crud.get_orders(db)
-
-
-@router.get("/suppliers/{supplier_id}/orders", response_model=List[schemas.SupplierOrderOut], tags=["Orders"])
-def get_supplier_orders(supplier_id: int, db: Session = Depends(get_db)):
-    return crud.get_orders(db, supplier_id=supplier_id)
-
-
-@router.post("/orders", response_model=schemas.SupplierOrderOut, status_code=201, tags=["Orders"])
-def create_order(order: schemas.SupplierOrderCreate, db: Session = Depends(get_db)):
-    try:
-        return crud.create_order(db, order)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-class _StatusUpdate(_BaseModel):
-    status: str
-
-@router.patch("/orders/{order_id}/status", response_model=schemas.SupplierOrderOut, tags=["Orders"])
-def update_order_status(order_id: int, body: _StatusUpdate, db: Session = Depends(get_db)):
-    result = crud.get_order(db, order_id)   # reload with items
-    if not result:
-        raise HTTPException(status_code=404, detail="Order not found")
-    result = crud.update_order_status(db, order_id, body.status)
-    # Reload with items after status change
-    result = crud.get_order(db, order_id)
-    return result
-
-
-@router.delete("/orders/{order_id}", tags=["Orders"])
-def delete_order(order_id: int, db: Session = Depends(get_db)):
-    result = crud.delete_order(db, order_id)
-    if not result:
-        raise HTTPException(status_code=404, detail="Order not found")
-    return {"message": "Order deleted"}
 
 
 # ── DELIVERIES ────────────────────────────────────────────────────────────────
@@ -262,7 +217,6 @@ def get_all_deliveries(db: Session = Depends(get_db)):
             "id":                d.id,
             "supplier_id":       d.supplier_id,
             "supplier_name":     s.companyName if s else f"Supplier #{d.supplier_id}",
-            "order_id":          d.order_id,
             "expected_date":     str(d.expected_date) if d.expected_date else None,
             "delivery_date":     str(d.delivery_date) if d.delivery_date else None,
             "delivered_on_time": d.delivered_on_time,

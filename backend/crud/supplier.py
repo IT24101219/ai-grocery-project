@@ -127,14 +127,10 @@ def get_suppliers_for_export(db: Session):
             "PaymentTerms": s.paymentTerms,
             "ImportanceLevel": s.importanceLevel,
             "Status": s.status,
-            "DeliveryDay": s.delivery_day,
             "OnTimeRate": s.onTimeRate,
-            "TotalOrders": s.totalOrders,
-            "LateDeliveries": s.lateDeliveries,
             "ReliabilityScore": s.reliabilityScore,
             "CreatedAt": s.created_at,
             "UpdatedAt": s.updated_at,
-            "UpdatedBy": s.updated_by,
         })
     return rows
 
@@ -163,85 +159,6 @@ def import_suppliers_from_csv(db: Session, file_content: str):
         imported += 1
     db.commit()
     return imported
-
-
-# ── Order CRUD
-
-def _generate_order_number(db: Session) -> str:
-    """Generate a unique PO number like PO-20260305-001."""
-    from datetime import date as date_type
-    today = date_type.today().strftime("%Y%m%d")
-    prefix = f"PO-{today}-"
-    # Find highest sequence for today
-    last = (
-        db.query(models.SupplierOrder)
-        .filter(models.SupplierOrder.order_number.like(f"{prefix}%"))
-        .order_by(models.SupplierOrder.order_number.desc())
-        .first()
-    )
-    if last and last.order_number:
-        try:
-            seq = int(last.order_number.split("-")[-1]) + 1
-        except ValueError:
-            seq = 1
-    else:
-        seq = 1
-    return f"{prefix}{seq:03d}"
-
-
-def create_order(db: Session, order: schemas.SupplierOrderCreate):
-    items_data = order.items
-    order_data = order.model_dump(exclude={"items"})
-    db_order = models.SupplierOrder(
-        **order_data,
-        order_number=_generate_order_number(db),
-    )
-    db.add(db_order)
-    db.flush()  # get db_order.id before committing
-    for item in items_data:
-        db_item = models.SupplierOrderItem(order_id=db_order.id, **item.model_dump())
-        db.add(db_item)
-    db.commit()
-    db.refresh(db_order)
-    return db_order
-
-
-def get_orders(db: Session, supplier_id: int = None):
-    from sqlalchemy.orm import selectinload
-    query = db.query(models.SupplierOrder).options(
-        selectinload(models.SupplierOrder.items),
-        selectinload(models.SupplierOrder.supplier)
-    )
-    if supplier_id:
-        query = query.filter(models.SupplierOrder.supplier_id == supplier_id)
-    return query.order_by(models.SupplierOrder.created_at.desc()).all()
-
-
-def get_order(db: Session, order_id: int):
-    from sqlalchemy.orm import selectinload
-    return (
-        db.query(models.SupplierOrder)
-        .options(selectinload(models.SupplierOrder.items), selectinload(models.SupplierOrder.supplier))
-        .filter(models.SupplierOrder.id == order_id)
-        .first()
-    )
-
-
-def update_order_status(db: Session, order_id: int, status: str):
-    order = db.query(models.SupplierOrder).filter(models.SupplierOrder.id == order_id).first()
-    if order:
-        order.status = status
-        db.commit()
-        db.refresh(order)
-    return order
-
-
-def delete_order(db: Session, order_id: int):
-    order = db.query(models.SupplierOrder).filter(models.SupplierOrder.id == order_id).first()
-    if order:
-        db.delete(order)
-        db.commit()
-    return order
 
 
 # ── Delivery CRUD ────────────────────────────────────────────────────────────

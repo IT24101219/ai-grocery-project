@@ -63,7 +63,7 @@ function StatCard({ icon, label, value, sub, color = "slate" }) {
 
 // ── Add/Edit Modal ───────────────────────────────────────────────────────────
 function DeliveryModal({ open, mode, initial, suppliers, onClose, onSave }) {
-    const defaultForm = { supplier_id: "", order_id: "", expected_date: "", delivery_date: "", delivered_on_time: true, rating: "" };
+    const defaultForm = { supplier_id: "", expected_date: "", delivery_date: "", delivered_on_time: true, rating: "" };
     const [form, setForm] = useState(defaultForm);
     const [submitting, setSubmitting] = useState(false);
 
@@ -71,7 +71,6 @@ function DeliveryModal({ open, mode, initial, suppliers, onClose, onSave }) {
         if (open) setForm(initial ? {
             ...initial,
             supplier_id: initial.supplier_id || "",
-            order_id: initial.order_id || "",
             delivery_date: initial.delivery_date || "",
             rating: initial.rating || "",
         } : defaultForm);
@@ -94,7 +93,6 @@ function DeliveryModal({ open, mode, initial, suppliers, onClose, onSave }) {
         try {
             const payload = {
                 supplier_id: parseInt(form.supplier_id),
-                order_id: form.order_id ? parseInt(form.order_id) : null,
                 expected_date: form.expected_date,
                 delivery_date: form.delivery_date || null,
                 delivered_on_time: form.delivered_on_time,
@@ -157,13 +155,7 @@ function DeliveryModal({ open, mode, initial, suppliers, onClose, onSave }) {
                         </div>
                     )}
 
-                    <div>
-                        <label className="block text-sm font-semibold text-slate-700 mb-1">Linked Order ID</label>
-                        <input type="number" value={form.order_id}
-                            onChange={e => set("order_id", e.target.value)}
-                            placeholder="Optional"
-                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500" />
-                    </div>
+
 
                     <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 cursor-pointer">
                         <input type="checkbox" checked={form.delivered_on_time}
@@ -327,7 +319,6 @@ export default function Deliveries() {
                             <thead>
                                 <tr className="border-b border-slate-100 text-xs text-slate-500 font-bold">
                                     <th className="px-5 py-3">Supplier</th>
-                                    <th className="px-3 py-3">Order</th>
                                     <th className="px-3 py-3">
                                         <span className="flex items-center gap-1"><Calendar size={12} />Expected Date</span>
                                     </th>
@@ -345,7 +336,6 @@ export default function Deliveries() {
                                         <td className="px-5 py-3">
                                             <div className="font-semibold text-slate-800 max-w-[140px] truncate">{d.supplier_name}</div>
                                         </td>
-                                        <td className="px-3 py-3 text-slate-500 font-mono text-xs">{d.order_id ? `#${d.order_id}` : "—"}</td>
                                         <td className="px-3 py-3 text-slate-700 font-medium">{d.expected_date || "—"}</td>
                                         <td className={`px-3 py-3 font-medium ${d.delivery_date ? (d.days_variance > 0 ? "text-red-600" : "text-emerald-600") : "text-slate-400"}`}>
                                             {d.delivery_date || "Awaiting…"}

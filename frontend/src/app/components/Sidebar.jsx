@@ -12,7 +12,6 @@ import {
 
 const NAV = [
     { to: "/suppliers", icon: Users, label: "Suppliers" },
-    { to: "/orders", icon: ShoppingCart, label: "Orders" },
     { to: "/deliveries", icon: Truck, label: "Deliveries" },
     { to: "/analytics", icon: BarChart2, label: "Analytics" },
 ];

@@ -17,7 +17,6 @@ class SupplierCreate(BaseModel):
     importanceLevel: str = "Regular Supplier"
     status: str = "Active"
     onTimeRate: float = 0.0
-    updated_by: str = "system"
 
     @field_validator("email")
     @classmethod
@@ -49,52 +48,8 @@ class SupplierCategoryOut(SupplierCategoryBase):
     class Config:
         from_attributes = True
 
-class SupplierOrderItemCreate(BaseModel):
-    item_name: str
-    quantity: float
-    unit_price: float
-
-class SupplierOrderItemOut(SupplierOrderItemCreate):
-    id: int
-    order_id: int
-
-    class Config:
-        from_attributes = True
-
-class SupplierOrderCreate(BaseModel):
-    supplier_id: int
-    order_date: date
-    expected_delivery_date: Optional[date] = None
-    status: str = "Pending"
-    notes: str = ""
-    items: List[SupplierOrderItemCreate] = []
-
-class SupplierOrderOut(BaseModel):
-    id: int
-    order_number: Optional[str] = None
-    supplier_id: int
-    order_date: date
-    expected_delivery_date: Optional[date] = None
-    status: str
-    notes: str = ""
-    items: List[SupplierOrderItemOut] = []
-    total_amount: float = 0.0
-    created_at: Optional[datetime] = None
-
-    @model_validator(mode="after")
-    def compute_total(self):
-        self.total_amount = sum(
-            (item.quantity or 0) * (item.unit_price or 0)
-            for item in self.items
-        )
-        return self
-
-    class Config:
-        from_attributes = True
-
 class SupplierDeliveryCreate(BaseModel):
     supplier_id: int
-    order_id: Optional[int] = None
     delivery_date: Optional[date] = None
     expected_date: date
     delivered_on_time: bool = True
@@ -124,7 +79,6 @@ class SupplierOut(BaseModel):
     reliabilityScore: float = 0.0
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    updated_by: str = "system"
 
     @field_validator("categories", mode="before")
     @classmethod
