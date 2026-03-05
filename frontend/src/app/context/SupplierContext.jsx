@@ -9,7 +9,16 @@ export function SupplierProvider({ children }) {
     const loadSuppliers = async () => {
         try {
             const res = await API.get("/suppliers");
-            setSuppliers(res.data);
+            const mapping = {
+                "Normal": "Regular Supplier",
+                "Preferred": "Trusted Supplier",
+                "Critical": "Important Supplier"
+            };
+            const mappedData = res.data.map(s => ({
+                ...s,
+                importanceLevel: mapping[s.importanceLevel] || s.importanceLevel || "Regular Supplier"
+            }));
+            setSuppliers(mappedData);
         } catch (error) {
             console.error("Failed to load suppliers:", error);
         }

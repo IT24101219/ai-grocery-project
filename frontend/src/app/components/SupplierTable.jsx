@@ -9,16 +9,31 @@ const CATEGORIES = [
 const PAGE_SIZE = 10;
 
 function ReliabilityBadge({ score }) {
-    if (!score || score === 0) return <span className="text-xs text-slate-400">—</span>;
-    const color =
-        score >= 8 ? "text-emerald-700 bg-emerald-50 border-emerald-200" :
-            score >= 6 ? "text-blue-700 bg-blue-50 border-blue-200" :
-                score >= 4 ? "text-amber-700 bg-amber-50 border-amber-200" :
-                    "text-red-700 bg-red-50 border-red-200";
+    if (score === null || score === undefined) return <span className="text-xs text-slate-400">—</span>;
+    let color = "text-slate-600 bg-slate-100 border-slate-200";
+    let label = "New / Unrated";
+
+    if (score >= 8) {
+        color = "text-emerald-700 bg-emerald-50 border-emerald-200";
+        label = "Excellent";
+    } else if (score >= 6) {
+        color = "text-blue-700 bg-blue-50 border-blue-200";
+        label = "Good";
+    } else if (score >= 4) {
+        color = "text-amber-700 bg-amber-50 border-amber-200";
+        label = "Average";
+    } else if (score > 0) {
+        color = "text-red-700 bg-red-50 border-red-200";
+        label = "Poor";
+    }
+
     return (
-        <div className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${color}`}>
-            <Activity size={10} />
-            {score.toFixed(1)}
+        <div className="flex flex-col gap-0.5">
+            <div className={`inline-flex w-max items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-bold ${color}`}>
+                <Activity size={10} />
+                {score.toFixed(1)}
+            </div>
+            <div className="text-[10px] font-semibold text-slate-500">{label}</div>
         </div>
     );
 }
@@ -61,14 +76,13 @@ export default function SupplierTable({ suppliers, onEdit, onSoftDelete }) {
         }
 
         if (statusFilter !== "All") data = data.filter((s) => s.status === statusFilter);
-        if (importanceFilter !== "All") data = data.filter((s) => (s.importanceLevel || "Normal") === importanceFilter);
+        if (importanceFilter !== "All") data = data.filter((s) => (s.importanceLevel || "Regular Supplier") === importanceFilter);
         if (categoryFilter !== "All") data = data.filter((s) => (s.categories || []).includes(categoryFilter));
 
         const sortFn = {
             "name-asc": (a, b) => (a.companyName || "").localeCompare(b.companyName || ""),
             "name-desc": (a, b) => (b.companyName || "").localeCompare(a.companyName || ""),
             "reliability-desc": (a, b) => (b.reliabilityScore || 0) - (a.reliabilityScore || 0),
-            "lead-asc": (a, b) => (a.delivery_day || 0) - (b.delivery_day || 0),
             "status": (a, b) => (a.status || "").localeCompare(b.status || ""),
         };
         data.sort(sortFn[sortBy] || sortFn["name-asc"]);
@@ -116,9 +130,9 @@ export default function SupplierTable({ suppliers, onEdit, onSoftDelete }) {
                 <select value={importanceFilter} onChange={(e) => { setImportanceFilter(e.target.value); resetPage(); }}
                     className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm">
                     <option value="All">All Importance</option>
-                    <option value="Normal">Normal</option>
-                    <option value="Preferred">Preferred</option>
-                    <option value="Critical">Critical</option>
+                    <option value="Regular Supplier">Regular Supplier</option>
+                    <option value="Trusted Supplier">Trusted Supplier</option>
+                    <option value="Important Supplier">Important Supplier</option>
                 </select>
 
                 <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); resetPage(); }}
@@ -131,7 +145,6 @@ export default function SupplierTable({ suppliers, onEdit, onSoftDelete }) {
                     <option value="name-asc">Name A–Z</option>
                     <option value="name-desc">Name Z–A</option>
                     <option value="reliability-desc">Score ↑</option>
-                    <option value="lead-asc">Delivery Day ↑</option>
                     <option value="status">Status</option>
                 </select>
             </div>
@@ -145,7 +158,6 @@ export default function SupplierTable({ suppliers, onEdit, onSoftDelete }) {
                             <th className="px-4 py-3">Company / Name</th>
                             <th className="px-4 py-3">Category</th>
                             <th className="px-4 py-3">Contact</th>
-                            <th className="px-4 py-3">Delivery Day</th>
                             <th className="px-4 py-3">Score</th>
                             <th className="px-4 py-3">Status</th>
                             <th className="px-4 py-3 text-right">Actions</th>
@@ -169,9 +181,6 @@ export default function SupplierTable({ suppliers, onEdit, onSoftDelete }) {
                                     </td>
                                     <td className="px-4 py-3"><CategoryChips categories={s.categories} /></td>
                                     <td className="px-4 py-3 text-slate-600">{s.contactPerson || "—"}</td>
-                                    <td className="px-4 py-3 text-slate-600">
-                                        {s.delivery_day ? `${s.delivery_day}d` : "—"}
-                                    </td>
                                     <td className="px-4 py-3">
                                         <ReliabilityBadge score={s.reliabilityScore || 0} />
                                     </td>

@@ -6,7 +6,8 @@ function ScoreGauge({ score }) {
     const color =
         score >= 8 ? "#10b981" :
             score >= 6 ? "#3b82f6" :
-                score >= 4 ? "#f59e0b" : "#cbd5e1";
+                score >= 4 ? "#f59e0b" :
+                    score > 0 ? "#ef4444" : "#94a3b8";
     const r = 38;
     const circ = 2 * Math.PI * r;
     const dash = (pct / 100) * circ;

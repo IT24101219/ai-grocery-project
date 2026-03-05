@@ -8,7 +8,7 @@ const CATEGORIES = [
 ];
 
 const PAYMENT_TERMS = ["Cash", "Card", "Bank Transfer", "Other"];
-const PRIORITIES = ["Normal", "Preferred", "Critical"];
+const PRIORITIES = ["Regular Supplier", "Trusted Supplier", "Important Supplier"];
 
 function genCode() {
     return `SUP-${Date.now().toString().slice(-6)}`;
@@ -25,7 +25,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
         address: "",
         categories: [],            // array of category name strings
         paymentTerms: "",
-        importanceLevel: "Normal",
+        importanceLevel: "Regular Supplier",
         status: "Active",
         delivery_day: "",
         totalOrders: "",
@@ -124,7 +124,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                 address: form.address || "",
                 categories: Array.isArray(form.categories) ? form.categories : [],
                 paymentTerms: form.paymentTerms || "",
-                importanceLevel: form.importanceLevel || "Normal",
+                importanceLevel: form.importanceLevel || "Regular Supplier",
                 status: form.status || "Active",
                 delivery_day: form.delivery_day !== "" ? parseInt(form.delivery_day) || 0 : 0,
                 totalOrders: form.totalOrders !== "" ? parseInt(form.totalOrders) || 0 : 0,
@@ -148,7 +148,7 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                 <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4 flex-shrink-0">
                     <div>
                         <div className="text-lg font-bold text-slate-900">
-                            {mode === "create" ? "➕ Add Supplier" : "✏️ Edit Supplier"}
+                            {mode === "create" ? "Add new supplier" : "Edit Supplier"}
                         </div>
                         <div className="text-xs text-slate-500 mt-0.5">
                             {mode === "create" ? "Fill in details to create a new supplier record" : "Update supplier information"}
@@ -245,40 +245,6 @@ export default function SupplierFormModal({ open, mode, initial, onClose, onSubm
                                 <option value="">Select terms…</option>
                                 {PAYMENT_TERMS.map((t) => <option key={t} value={t}>{t}</option>)}
                             </select>
-                        </Field>
-
-                        {/* Lead Time */}
-                        <Field label="Delivery Day (days)">
-                            <input
-                                value={form.delivery_day}
-                                onChange={(e) => set("delivery_day", e.target.value)}
-                                className={inp()}
-                                placeholder="e.g. 7"
-                                type="number"
-                                min={0}
-                            />
-                        </Field>
-
-                        {/* Total Orders */}
-                        <Field label="Total Orders">
-                            <input
-                                value={form.totalOrders}
-                                onChange={(e) => set("totalOrders", e.target.value)}
-                                className={inp()}
-                                placeholder="e.g. 40"
-                                type="number" min={0}
-                            />
-                        </Field>
-
-                        {/* Late Deliveries */}
-                        <Field label="Late Deliveries">
-                            <input
-                                value={form.lateDeliveries}
-                                onChange={(e) => set("lateDeliveries", e.target.value)}
-                                className={inp()}
-                                placeholder="e.g. 1"
-                                type="number" min={0}
-                            />
                         </Field>
 
                         {/* Categories */}

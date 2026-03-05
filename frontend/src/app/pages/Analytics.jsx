@@ -9,17 +9,19 @@ const COLORS = ["#10b981", "#3b82f6", "#f59e0b", "#ef4444", "#8b5cf6", "#06b6d4"
 const STATUS_COLORS = { Active: "#10b981", Inactive: "#94a3b8" };
 
 function reliabilityColor(score) {
-    if (score >= 7.5) return { bar: "#10b981", badge: "bg-emerald-100 text-emerald-700 border-emerald-200" };
-    if (score >= 5.0) return { bar: "#3b82f6", badge: "bg-blue-100 text-blue-700 border-blue-200" };
-    if (score >= 3.0) return { bar: "#f59e0b", badge: "bg-amber-100 text-amber-700 border-amber-200" };
-    return { bar: "#ef4444", badge: "bg-red-100 text-red-700 border-red-200" };
+    if (score >= 8.0) return { bar: "#10b981", badge: "bg-emerald-100 text-emerald-700 border-emerald-200" };
+    if (score >= 6.0) return { bar: "#3b82f6", badge: "bg-blue-100 text-blue-700 border-blue-200" };
+    if (score >= 4.0) return { bar: "#f59e0b", badge: "bg-amber-100 text-amber-700 border-amber-200" };
+    if (score > 0) return { bar: "#ef4444", badge: "bg-red-100 text-red-700 border-red-200" };
+    return { bar: "#94a3b8", badge: "bg-slate-100 text-slate-600 border-slate-200" };
 }
 
 function ratingLabel(score) {
-    if (score >= 7.5) return "Excellent";
-    if (score >= 5.0) return "Good";
-    if (score >= 3.0) return "Average";
-    return "Poor";
+    if (score >= 8.0) return "Excellent";
+    if (score >= 6.0) return "Good";
+    if (score >= 4.0) return "Average";
+    if (score > 0) return "Poor";
+    return "New / Unrated";
 }
 
 export default function Analytics() {
@@ -66,24 +68,18 @@ export default function Analytics() {
         const sortFns = {
             "reliability-desc": (a, b) => (b.reliabilityScore || 0) - (a.reliabilityScore || 0),
             "reliability-asc": (a, b) => (a.reliabilityScore || 0) - (b.reliabilityScore || 0),
-            "lead-asc": (a, b) => (a.delivery_day || 0) - (b.delivery_day || 0),
-            "lead-desc": (a, b) => (b.delivery_day || 0) - (a.delivery_day || 0),
-            "late-asc": (a, b) => (a.lateDeliveries || 0) - (b.lateDeliveries || 0),
-            "late-desc": (a, b) => (b.lateDeliveries || 0) - (a.lateDeliveries || 0),
             "name-asc": (a, b) => (a.companyName || "").localeCompare(b.companyName || ""),
         };
         list.sort(sortFns[sortBy] || sortFns["reliability-desc"]);
         return list;
     }, [suppliers, filterStatus, filterCategory, sortBy]);
 
-    const bestSupplier = filteredSuppliers[0] ?? null;
-    const worstSupplier = filteredSuppliers[filteredSuppliers.length - 1] ?? null;
 
-    /* Performance chart data */
+    /* Performance chart data — real reliabilityScore per supplier */
     const perfChartData = filteredSuppliers.slice(0, 20).map((s) => ({
         label: s.companyName || s.name || "—",
-        value: 0,
-        color: reliabilityColor(0).bar,
+        value: parseFloat((s.reliabilityScore || 0).toFixed(2)),
+        color: reliabilityColor(s.reliabilityScore || 0).bar,
     }));
 
     /* Status */
@@ -108,13 +104,6 @@ export default function Analytics() {
                         Performance analysis, rankings, and data-driven supplier insights.
                     </p>
                 </div>
-                <button
-                    onClick={load}
-                    className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors"
-                >
-                    <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-                    Refresh
-                </button>
             </div>
 
             {/* ── Stat Cards ── */}
@@ -129,92 +118,6 @@ export default function Analytics() {
                     icon={<TrendingUp size={16} />} color="blue" subtitle="Active suppliers" />
             </div>
 
-            {/* ── Best & Worst Supplier ── */}
-            <div className="grid gap-4 md:grid-cols-2">
-                {/* Best Supplier */}
-                <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-100">
-                            <Trophy size={16} className="text-emerald-600" />
-                        </span>
-                        <div>
-                            <div className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Best Supplier</div>
-                            <div className="text-xs text-slate-400">Highest reliability score</div>
-                        </div>
-                    </div>
-                    {bestSupplier ? (
-                        <div>
-                            <div className="text-lg font-extrabold text-slate-900 truncate">{bestSupplier.companyName}</div>
-                            {bestSupplier.name && <div className="text-xs text-slate-500 truncate">{bestSupplier.name}</div>}
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${reliabilityColor(0).badge}`}>
-                                    Score: 0.0 / 10
-                                </span>
-                                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs text-slate-600">
-                                    {ratingLabel(0)}
-                                </span>
-                                {bestSupplier.category && (
-                                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
-                                        {bestSupplier.category.split(",")[0].trim()}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                <div className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                                    <div className="text-slate-400">Delivery Day</div>
-                                    <div className="font-bold text-slate-800">{bestSupplier.delivery_day ?? "—"} days</div>
-                                </div>
-                                <div className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                                    <div className="text-slate-400">Late Deliveries</div>
-                                    <div className="font-bold text-slate-800">{bestSupplier.lateDeliveries ?? "—"}</div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : <EmptyMsg />}
-                </div>
-
-                {/* Worst Supplier */}
-                <div className="rounded-2xl border border-red-200 bg-gradient-to-br from-red-50 to-white p-5 shadow-sm">
-                    <div className="flex items-center gap-2 mb-3">
-                        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-red-100">
-                            <AlertTriangle size={16} className="text-red-500" />
-                        </span>
-                        <div>
-                            <div className="text-xs font-semibold text-red-600 uppercase tracking-wide">Needs Attention</div>
-                            <div className="text-xs text-slate-400">Lowest reliability score</div>
-                        </div>
-                    </div>
-                    {worstSupplier && worstSupplier !== bestSupplier ? (
-                        <div>
-                            <div className="text-lg font-extrabold text-slate-900 truncate">{worstSupplier.companyName}</div>
-                            {worstSupplier.name && <div className="text-xs text-slate-500 truncate">{worstSupplier.name}</div>}
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <span className={`rounded-full border px-2.5 py-0.5 text-xs font-bold ${reliabilityColor(0).badge}`}>
-                                    Score: 0.0 / 10
-                                </span>
-                                <span className="rounded-full border border-slate-200 bg-white px-2.5 py-0.5 text-xs text-slate-600">
-                                    {ratingLabel(0)}
-                                </span>
-                                {worstSupplier.category && (
-                                    <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
-                                        {worstSupplier.category.split(",")[0].trim()}
-                                    </span>
-                                )}
-                            </div>
-                            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                                <div className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                                    <div className="text-slate-400">Delivery Day</div>
-                                    <div className="font-bold text-slate-800">{worstSupplier.delivery_day ?? "—"} days</div>
-                                </div>
-                                <div className="rounded-lg bg-white border border-slate-100 px-3 py-2">
-                                    <div className="text-slate-400">Late Deliveries</div>
-                                    <div className="font-bold text-slate-800">{worstSupplier.lateDeliveries ?? "—"}</div>
-                                </div>
-                            </div>
-                        </div>
-                    ) : <EmptyMsg />}
-                </div>
-            </div>
 
             {/* ── Filter & Sort Controls ── */}
             <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -258,10 +161,6 @@ export default function Analytics() {
                         >
                             <option value="reliability-desc">Score ↓ (Best first)</option>
                             <option value="reliability-asc">Score ↑ (Worst first)</option>
-                            <option value="lead-asc">Delivery Day ↑</option>
-                            <option value="lead-desc">Delivery Day ↓</option>
-                            <option value="late-asc">Late Deliveries ↑</option>
-                            <option value="late-desc">Late Deliveries ↓</option>
                             <option value="name-asc">Name A→Z</option>
                         </select>
                         <ChevronDown size={14} className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -314,11 +213,11 @@ export default function Analytics() {
                 <ChartCard title="🏆 Top 5 Best Suppliers" subtitle="By reliability score">
                     {analytics?.top5?.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={analytics.top5.map(d => ({ ...d, value: 0 }))} layout="vertical" barSize={16}>
+                            <BarChart data={analytics.top5.map(d => ({ ...d, value: parseFloat((d.reliabilityScore || d.value || 0).toFixed(2)) }))} layout="vertical" barSize={16}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                                <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11 }} />
                                 <YAxis dataKey="label" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={() => ["N/A", "Score"]} />
+                                <Tooltip formatter={(v) => [`${v} / 10`, "Score"]} />
                                 <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#10b981" />
                             </BarChart>
                         </ResponsiveContainer>
@@ -328,11 +227,11 @@ export default function Analytics() {
                 <ChartCard title="⚠️ Bottom 5 Suppliers" subtitle="Needs attention">
                     {analytics?.bottom5?.length > 0 ? (
                         <ResponsiveContainer width="100%" height={220}>
-                            <BarChart data={analytics.bottom5.map(d => ({ ...d, value: 0 }))} layout="vertical" barSize={16}>
+                            <BarChart data={analytics.bottom5.map(d => ({ ...d, value: parseFloat((d.reliabilityScore || d.value || 0).toFixed(2)) }))} layout="vertical" barSize={16}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
+                                <XAxis type="number" domain={[0, 10]} tick={{ fontSize: 11 }} />
                                 <YAxis dataKey="label" type="category" width={120} tick={{ fontSize: 11 }} />
-                                <Tooltip formatter={() => ["N/A", "Score"]} />
+                                <Tooltip formatter={(v) => [`${v} / 10`, "Score"]} />
                                 <Bar dataKey="value" radius={[0, 6, 6, 0]} fill="#f59e0b" />
                             </BarChart>
                         </ResponsiveContainer>
@@ -384,6 +283,41 @@ export default function Analytics() {
                         </ResponsiveContainer>
                     ) : <EmptyChart />}
                 </ChartCard>
+
+                {/* Importance Pie Chart */}
+                <div className="col-span-1 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <div className="mb-4 flex items-center gap-2">
+                        <Star size={16} className="text-amber-500" />
+                        <div className="font-bold text-slate-900">Suppliers by Importance Level</div>
+                    </div>
+                    {analytics?.chart?.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={260}>
+                            <PieChart>
+                                <Pie
+                                    data={analytics.chart}
+                                    dataKey="value"
+                                    nameKey="label"
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={90}
+                                    innerRadius={45}
+                                    label={({ label, percent }) => `${label} ${(percent * 100).toFixed(0)}%`}
+                                    labelLine={false}
+                                >
+                                    {analytics.chart.map((_, i) => (
+                                        <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                                    ))}
+                                </Pie>
+                                <Tooltip />
+                                <Legend />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="flex h-[260px] items-center justify-center rounded-xl border border-dashed border-slate-200 text-sm text-slate-400">
+                            No data yet — add some suppliers first.
+                        </div>
+                    )}
+                </div>
             </div>
 
         </div>
@@ -410,6 +344,3 @@ function EmptyChart() {
     );
 }
 
-function EmptyMsg() {
-    return <div className="mt-3 text-sm text-slate-400">No suppliers match the current filter.</div>;
-}

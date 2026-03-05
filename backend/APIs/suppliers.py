@@ -2,6 +2,7 @@
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel as _BaseModel
 from sqlalchemy.orm import Session
 from typing import List, Optional
 import io
@@ -114,8 +115,14 @@ def analytics(db: Session = Depends(get_db)):
     inactive = len(inactive_list)
 
     by_importance = {}
+    mapping = {
+        "Normal": "Regular Supplier",
+        "Preferred": "Trusted Supplier",
+        "Critical": "Important Supplier"
+    }
     for s in suppliers:
-        key = s.importanceLevel or "Normal"
+        raw_key = s.importanceLevel or "Regular Supplier"
+        key = mapping.get(raw_key, raw_key)
         by_importance[key] = by_importance.get(key, 0) + 1
     priority_chart = [{"label": k, "value": v} for k, v in by_importance.items()]
 
@@ -126,11 +133,10 @@ def analytics(db: Session = Depends(get_db)):
     category_chart = [{"label": k, "value": v} for k, v in sorted(by_category.items(), key=lambda x: -x[1])]
 
     sorted_active = sorted(active_list, key=lambda s: s.reliabilityScore or 0, reverse=True)
-    top5 = [{"id": s.id, "label": s.companyName, "value": round((s.reliabilityScore or 0) * 10, 1), "reliability": round((s.reliabilityScore or 0), 2)} for s in sorted_active[:5]]
-    bottom5 = [{"id": s.id, "label": s.companyName, "value": round((s.reliabilityScore or 0) * 10, 1), "reliability": round((s.reliabilityScore or 0), 2)} for s in sorted_active[-5:][::-1]]
+    top5    = [{"id": s.id, "label": s.companyName, "value": round(s.reliabilityScore or 0, 2), "reliabilityScore": round(s.reliabilityScore or 0, 2)} for s in sorted_active[:5]]
+    bottom5 = [{"id": s.id, "label": s.companyName, "value": round(s.reliabilityScore or 0, 2), "reliabilityScore": round(s.reliabilityScore or 0, 2)} for s in sorted_active[-5:][::-1]]
 
-    delivery_days = [s.delivery_day for s in active_list if s.delivery_day and s.delivery_day > 0]
-    avg_delivery_day = round(sum(delivery_days) / len(delivery_days), 1) if delivery_days else 0
+
 
     otr = [s.onTimeRate for s in active_list if s.onTimeRate > 0]
     avg_on_time_rate = round(sum(otr) / len(otr), 1) if otr else 0
@@ -139,7 +145,7 @@ def analytics(db: Session = Depends(get_db)):
         "total": total,
         "active": active,
         "inactive": inactive,
-        "avg_lead_time": avg_delivery_day,
+        "avg_lead_time": 0,
         "avg_on_time_rate": avg_on_time_rate,
         "chart": priority_chart,
         "category_chart": category_chart,
@@ -148,6 +154,153 @@ def analytics(db: Session = Depends(get_db)):
     }
 
 
+# ── SUPPLIER RANKINGS ─────────────────────────────────────────────────────────
+
+@router.get("/suppliers/rankings", tags=["Suppliers"])
+def get_supplier_rankings(db: Session = Depends(get_db)):
+
+    def tier(score: float) -> str:
+        if score >= 8:   return "Excellent"
+        if score >= 6:   return "Good"
+        if score >= 4:   return "Average"
+        if score > 0:    return "Poor"
+        return "New / Unrated"
+
+    suppliers = (
+        db.query(models.Supplier)
+        .filter(models.Supplier.status == "Active")
+        .order_by(models.Supplier.reliabilityScore.desc())
+        .all()
+    )
+
+    return [
+        {
+            "rank":             idx + 1,
+            "id":               s.id,
+            "name":             s.companyName,
+            "score":            round(s.reliabilityScore or 0, 2),
+            "tier":             tier(s.reliabilityScore or 0),
+            "onTimeRate":       round(s.onTimeRate or 0, 1),
+            "totalOrders":      s.totalOrders or 0,
+            "lateDeliveries":   s.lateDeliveries or 0,
+        }
+        for idx, s in enumerate(suppliers)
+    ]
 
 
+# ── ORDERS ────────────────────────────────────────────────────────────────────
+
+@router.get("/orders", response_model=List[schemas.SupplierOrderOut], tags=["Orders"])
+def get_all_orders(db: Session = Depends(get_db)):
+    """Get all purchase orders across all suppliers."""
+    return crud.get_orders(db)
+
+
+@router.get("/suppliers/{supplier_id}/orders", response_model=List[schemas.SupplierOrderOut], tags=["Orders"])
+def get_supplier_orders(supplier_id: int, db: Session = Depends(get_db)):
+    return crud.get_orders(db, supplier_id=supplier_id)
+
+
+@router.post("/orders", response_model=schemas.SupplierOrderOut, status_code=201, tags=["Orders"])
+def create_order(order: schemas.SupplierOrderCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_order(db, order)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+class _StatusUpdate(_BaseModel):
+    status: str
+
+@router.patch("/orders/{order_id}/status", response_model=schemas.SupplierOrderOut, tags=["Orders"])
+def update_order_status(order_id: int, body: _StatusUpdate, db: Session = Depends(get_db)):
+    result = crud.get_order(db, order_id)   # reload with items
+    if not result:
+        raise HTTPException(status_code=404, detail="Order not found")
+    result = crud.update_order_status(db, order_id, body.status)
+    # Reload with items after status change
+    result = crud.get_order(db, order_id)
+    return result
+
+
+@router.delete("/orders/{order_id}", tags=["Orders"])
+def delete_order(order_id: int, db: Session = Depends(get_db)):
+    result = crud.delete_order(db, order_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"message": "Order deleted"}
+
+
+# ── DELIVERIES ────────────────────────────────────────────────────────────────
+
+@router.get("/deliveries", tags=["Deliveries"])
+def get_all_deliveries(db: Session = Depends(get_db)):
+    from sqlalchemy.orm import selectinload
+
+    def score_tier(score: float) -> str:
+        if score >= 8: return "Excellent"
+        if score >= 6: return "Good"
+        if score >= 4: return "Average"
+        if score > 0: return "Poor"
+        return "New / Unrated"
+
+    deliveries = (
+        db.query(models.SupplierDelivery)
+        .options(selectinload(models.SupplierDelivery.supplier))
+        .order_by(models.SupplierDelivery.expected_date.desc())
+        .all()
+    )
+    result = []
+    for d in deliveries:
+        # Days variance: positive = late, negative = early, None = not yet delivered
+        variance = None
+        if d.delivery_date and d.expected_date:
+            variance = (d.delivery_date - d.expected_date).days
+
+        s = d.supplier
+        result.append({
+            "id":                d.id,
+            "supplier_id":       d.supplier_id,
+            "supplier_name":     s.companyName if s else f"Supplier #{d.supplier_id}",
+            "order_id":          d.order_id,
+            "expected_date":     str(d.expected_date) if d.expected_date else None,
+            "delivery_date":     str(d.delivery_date) if d.delivery_date else None,
+            "delivered_on_time": d.delivered_on_time,
+            "days_variance":     variance,   # + = late days, - = early days, None = pending
+            "rating":            d.rating,
+            # ── Supplier formula snapshot ──────────────────────────────────
+            "supplier_score":      round(s.reliabilityScore or 0, 2) if s else 0,
+            "supplier_tier":       score_tier(s.reliabilityScore or 0) if s else "—",
+            "supplier_on_time_pct": round(s.onTimeRate or 0, 1) if s else 0,
+        })
+    return result
+
+
+@router.get("/suppliers/{supplier_id}/deliveries", response_model=List[schemas.SupplierDeliveryOut], tags=["Deliveries"])
+def get_deliveries(supplier_id: int, db: Session = Depends(get_db)):
+    return crud.get_deliveries(db, supplier_id)
+
+
+@router.post("/deliveries", response_model=schemas.SupplierDeliveryOut, status_code=201, tags=["Deliveries"])
+def create_delivery(delivery: schemas.SupplierDeliveryCreate, db: Session = Depends(get_db)):
+    try:
+        return crud.create_delivery(db, delivery)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.put("/deliveries/{delivery_id}", response_model=schemas.SupplierDeliveryOut, tags=["Deliveries"])
+def update_delivery(delivery_id: int, delivery: schemas.SupplierDeliveryCreate, db: Session = Depends(get_db)):
+    result = crud.update_delivery(db, delivery_id, delivery)
+    if not result:
+        raise HTTPException(status_code=404, detail="Delivery not found")
+    return result
+
+
+@router.delete("/deliveries/{delivery_id}", tags=["Deliveries"])
+def delete_delivery(delivery_id: int, db: Session = Depends(get_db)):
+    result = crud.delete_delivery(db, delivery_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="Delivery not found")
+    return {"message": "Delivery deleted"}
 

@@ -152,12 +152,9 @@ def import_suppliers_from_csv(db: Session, file_content: str):
             phone=row.get("Phone", ""),
             address=row.get("Address", ""),
             paymentTerms=row.get("PaymentTerms", ""),
-            importanceLevel=row.get("ImportanceLevel", "Normal"),
+            importanceLevel=row.get("ImportanceLevel", "Regular Supplier"),
             status=row.get("Status", "Active"),
-            delivery_day=int(row.get("DeliveryDay", 0) or 0),
             onTimeRate=float(row.get("OnTimeRate", 0) or 0),
-            totalOrders=int(row.get("TotalOrders", 0) or 0),
-            lateDeliveries=int(row.get("LateDeliveries", 0) or 0),
         )
         # Parse comma-separated categories from CSV
         cat_names = [c.strip() for c in row.get("Categories", "").split(",") if c.strip()]
@@ -166,6 +163,85 @@ def import_suppliers_from_csv(db: Session, file_content: str):
         imported += 1
     db.commit()
     return imported
+
+
+# ── Order CRUD
+
+def _generate_order_number(db: Session) -> str:
+    """Generate a unique PO number like PO-20260305-001."""
+    from datetime import date as date_type
+    today = date_type.today().strftime("%Y%m%d")
+    prefix = f"PO-{today}-"
+    # Find highest sequence for today
+    last = (
+        db.query(models.SupplierOrder)
+        .filter(models.SupplierOrder.order_number.like(f"{prefix}%"))
+        .order_by(models.SupplierOrder.order_number.desc())
+        .first()
+    )
+    if last and last.order_number:
+        try:
+            seq = int(last.order_number.split("-")[-1]) + 1
+        except ValueError:
+            seq = 1
+    else:
+        seq = 1
+    return f"{prefix}{seq:03d}"
+
+
+def create_order(db: Session, order: schemas.SupplierOrderCreate):
+    items_data = order.items
+    order_data = order.model_dump(exclude={"items"})
+    db_order = models.SupplierOrder(
+        **order_data,
+        order_number=_generate_order_number(db),
+    )
+    db.add(db_order)
+    db.flush()  # get db_order.id before committing
+    for item in items_data:
+        db_item = models.SupplierOrderItem(order_id=db_order.id, **item.model_dump())
+        db.add(db_item)
+    db.commit()
+    db.refresh(db_order)
+    return db_order
+
+
+def get_orders(db: Session, supplier_id: int = None):
+    from sqlalchemy.orm import selectinload
+    query = db.query(models.SupplierOrder).options(
+        selectinload(models.SupplierOrder.items),
+        selectinload(models.SupplierOrder.supplier)
+    )
+    if supplier_id:
+        query = query.filter(models.SupplierOrder.supplier_id == supplier_id)
+    return query.order_by(models.SupplierOrder.created_at.desc()).all()
+
+
+def get_order(db: Session, order_id: int):
+    from sqlalchemy.orm import selectinload
+    return (
+        db.query(models.SupplierOrder)
+        .options(selectinload(models.SupplierOrder.items), selectinload(models.SupplierOrder.supplier))
+        .filter(models.SupplierOrder.id == order_id)
+        .first()
+    )
+
+
+def update_order_status(db: Session, order_id: int, status: str):
+    order = db.query(models.SupplierOrder).filter(models.SupplierOrder.id == order_id).first()
+    if order:
+        order.status = status
+        db.commit()
+        db.refresh(order)
+    return order
+
+
+def delete_order(db: Session, order_id: int):
+    order = db.query(models.SupplierOrder).filter(models.SupplierOrder.id == order_id).first()
+    if order:
+        db.delete(order)
+        db.commit()
+    return order
 
 
 # ── Delivery CRUD ────────────────────────────────────────────────────────────
@@ -208,27 +284,53 @@ def delete_delivery(db: Session, delivery_id: int):
 
 
 def _recompute_supplier_performance(db: Session, supplier_id: int):
-    """Auto-update totalOrders, lateDeliveries, and onTimeRate based on real delivery data."""
+    """
+    Auto-update totalOrders, lateDeliveries, onTimeRate, and reliabilityScore
+    based on real delivery data.
+
+    Score formula (0 – 10):
+        on_time_factor = onTimeRate / 100               (0→1)
+        volume_factor  = min(totalOrders / 20, 1.0)     (0→1, caps at 20 deliveries)
+        late_ratio     = lateDeliveries / totalOrders   (0→1)
+
+        reliabilityScore = 6×on_time_factor
+                         + 2×volume_factor
+                         - 2×late_ratio
+                         clamped to [0, 10]
+
+    Interpretation: ≥8 = Excellent, 6–8 = Good, 4–6 = Average, <4 = Poor
+    """
     deliveries = db.query(models.SupplierDelivery).filter(
         models.SupplierDelivery.supplier_id == supplier_id
     ).all()
     supplier = db.query(models.Supplier).filter(models.Supplier.id == supplier_id).first()
-    
+
     if not supplier:
         return
 
-    total = len(deliveries)
-    if total == 0:
-        supplier.totalOrders = 0
-        supplier.lateDeliveries = 0
-        supplier.onTimeRate = 0.0
-    else:
-        # Assuming a delivery record roughly corresponds to a fulfilled order for performance tracking
-        late = sum(1 for d in deliveries if not d.delivered_on_time)
-        on_time = total - late
-        
-        supplier.totalOrders = total
-        supplier.lateDeliveries = late
-        supplier.onTimeRate = round((on_time / total) * 100, 2)
+    # Only count completed deliveries towards the score
+    completed_deliveries = [d for d in deliveries if d.delivery_date is not None]
+    total = len(completed_deliveries)
     
+    if total == 0:
+        supplier.onTimeRate = 0.0
+        supplier.reliabilityScore = 0.0
+    else:
+        late = sum(1 for d in completed_deliveries if not d.delivered_on_time)
+        on_time = total - late
+
+        supplier.onTimeRate = round((on_time / total) * 100, 2)
+
+        # ── Scoring formula ───────────────────────────────────────────────
+        on_time_factor = supplier.onTimeRate / 100          # 0.0 – 1.0
+        volume_factor  = min(total / 20, 1.0)               # 0.0 – 1.0
+        late_ratio     = late / total                        # 0.0 – 1.0
+
+        raw_score = (
+            6 * on_time_factor    # on-time delivery is the most important factor
+          + 2 * volume_factor     # track-record bonus (more deliveries = more trusted)
+          - 2 * late_ratio        # penalty for late deliveries
+        )
+        supplier.reliabilityScore = round(max(0.0, min(10.0, raw_score)), 2)
+
     db.commit()

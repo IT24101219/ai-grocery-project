@@ -135,10 +135,10 @@ export default function SupplierDeliverySection({ supplierId, onDeliveriesChange
     if (loading) return <div className="text-sm text-slate-500">Loading deliveries...</div>;
 
     return (
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm mt-6">
-            <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                    <Clock size={16} className="text-emerald-600" /> Delivery History
+        <div className="w-full">
+            <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <Clock size={18} className="text-emerald-500" /> Delivery History
                 </h3>
                 <button
                     onClick={() => setModal({ open: true, mode: 'create', data: null })}

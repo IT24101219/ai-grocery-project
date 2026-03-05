@@ -1,18 +1,20 @@
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Pencil, Mail, Phone, MapPin, Tag, Clock, CreditCard, ShieldCheck, Calendar } from "lucide-react";
+import {
+    ArrowLeft, Pencil, Mail, Phone, MapPin, Tag, Clock,
+    CreditCard
+} from "lucide-react";
 import { useSuppliers } from "../context/SupplierContext.jsx";
-import ScorePanel from "../components/ScorePanel.jsx";
 import { useState } from "react";
 import SupplierFormModal from "../components/SupplierFormModal.jsx";
 import SupplierDeliverySection from "../components/SupplierDeliverySection.jsx";
 import { useToast } from "../context/ToastContext.jsx";
 
 function CategoryChips({ categories }) {
-    if (!categories || categories.length === 0) return <span className="text-slate-400">—</span>;
+    if (!categories || categories.length === 0) return <span className="text-slate-400 text-sm italic">—</span>;
     return (
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-2">
             {categories.map((c) => (
-                <span key={c} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">
+                <span key={c} className="rounded-xl bg-white/60 backdrop-blur-sm border border-emerald-100 px-3 py-1.5 text-xs font-bold text-emerald-700 shadow-sm transition-transform hover:scale-105">
                     {c}
                 </span>
             ))}
@@ -22,33 +24,18 @@ function CategoryChips({ categories }) {
 
 function InfoRow({ icon, label, value }) {
     return (
-        <div className="flex items-start gap-3 py-3 border-b border-slate-50 last:border-0">
-            <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 mt-0.5">
+        <div className="group flex items-start gap-4 p-4 rounded-2xl transition-all duration-300 hover:bg-slate-50 border border-transparent hover:border-slate-100">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600 shadow-sm border border-emerald-100 group-hover:scale-105 transition-all duration-300">
                 {icon}
             </div>
-            <div className="min-w-0 flex-1">
-                <div className="text-xs font-semibold text-slate-500">{label}</div>
-                <div className="mt-0.5 text-sm font-semibold text-slate-900 break-words">{value || "—"}</div>
+            <div className="min-w-0 flex-1 pt-0.5">
+                <div className="text-[11px] font-bold uppercase tracking-widest text-slate-400 mb-1">{label}</div>
+                <div className="mt-1 text-[15px] font-semibold text-slate-800 break-words">{value || <span className="text-slate-300 font-medium italic">Not provided</span>}</div>
             </div>
         </div>
     );
 }
 
-function ScoreBar({ label, value, max = 100, color = "emerald" }) {
-    const pct = Math.min(100, Math.max(0, (value / max) * 100));
-    const cls = { emerald: "bg-emerald-500", blue: "bg-blue-500", amber: "bg-amber-500", red: "bg-red-500" };
-    return (
-        <div>
-            <div className="flex justify-between text-xs text-slate-600 mb-1">
-                <span>{label}</span>
-                <span className="font-semibold">{value} / {max}</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-slate-100 overflow-hidden">
-                <div className={`h-full rounded-full transition-all ${cls[color]}`} style={{ width: `${pct}%` }} />
-            </div>
-        </div>
-    );
-}
 
 export default function SupplierDetails() {
     const { id } = useParams();
@@ -68,142 +55,137 @@ export default function SupplierDetails() {
         }
     };
 
-    const initials = (supplier?.companyName || "??").slice(0, 2).toUpperCase();
-    const statusColor = supplier?.status === "Active"
-        ? "bg-emerald-100 text-emerald-700"
-        : "bg-slate-100 text-slate-600";
+    if (!supplier) {
+        return (
+            <div className="flex h-[60vh] flex-col items-center justify-center space-y-5 animate-in fade-in duration-500">
+                <div className="flex h-28 w-28 items-center justify-center rounded-full bg-slate-50 border-[10px] border-white shadow-[0_8px_30px_rgb(0,0,0,0.08)]">
+                    <span className="text-5xl drop-shadow-md">🔍</span>
+                </div>
+                <h2 className="text-3xl font-black tracking-tight text-slate-900">Supplier Not Found</h2>
+                <p className="text-slate-500 max-w-sm text-center font-medium">The supplier you're looking for doesn't exist or has been removed from the system.</p>
+                <Link to="/suppliers" className="mt-4 rounded-xl bg-emerald-600 px-8 py-3.5 font-bold text-white hover:bg-emerald-700 transition-all duration-300">
+                    Return to Directory
+                </Link>
+            </div>
+        );
+    }
 
+    const initials = (supplier.companyName || "??").slice(0, 2).toUpperCase();
+
+    // Status Badge Logic
+    const isStatusActive = supplier.status === "Active";
+    const statusColor = isStatusActive
+        ? "bg-emerald-100 text-emerald-800 border-emerald-200"
+        : "bg-slate-100/80 text-slate-700 border-slate-200";
+
+    // Priority Badge Logic
     const priorityColor = {
-        Critical: "bg-red-100 text-red-700 border-red-200",
-        Preferred: "bg-blue-100 text-blue-700 border-blue-200",
-        Normal: "bg-slate-100 text-slate-600 border-slate-200",
-    }[supplier?.importanceLevel || "Normal"];
+        "Important Supplier": "bg-rose-100/80 text-rose-800 border-rose-200/80 shadow-[0_0_15px_-3px_rgba(225,29,72,0.3)]",
+        "Trusted Supplier": "bg-cyan-100/80 text-cyan-800 border-cyan-200/80 shadow-[0_0_15px_-3px_rgba(6,182,212,0.3)]",
+        "Regular Supplier": "bg-slate-100/80 text-slate-700 border-slate-200/80",
+    }[supplier.importanceLevel || "Regular Supplier"];
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <Link to="/suppliers"
-                    className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-slate-900 transition-colors">
-                    <ArrowLeft size={16} /> Back to Suppliers
+        <div className="mx-auto max-w-[1400px] space-y-8 pb-16 animate-in fade-in slide-in-from-bottom-8 duration-700 ease-out">
+            {/* Header / Navigation */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <Link to="/suppliers" className="group inline-flex w-fit items-center gap-2.5 rounded-xl bg-white/80 backdrop-blur-md px-5 py-3 text-sm font-bold text-slate-600 shadow-sm border border-slate-200/60 hover:text-emerald-700 hover:border-emerald-300 hover:shadow-md transition-all duration-300">
+                    <ArrowLeft size={16} className="transition-transform duration-300 group-hover:-translate-x-1" />
+                    Back to Directory
                 </Link>
-                {supplier && (
-                    <button
-                        onClick={() => setEditOpen(true)}
-                        className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700 transition-colors"
-                    >
-                        <Pencil size={14} /> Edit Supplier
-                    </button>
-                )}
+                <button
+                    onClick={() => setEditOpen(true)}
+                    className="inline-flex w-fit items-center gap-2.5 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white hover:bg-emerald-700 transition-all duration-300"
+                >
+                    <Pencil size={16} className="text-emerald-100" />
+                    Edit Profile
+                </button>
             </div>
 
-            {!supplier ? (
-                <div className="rounded-2xl border border-dashed border-slate-300 p-12 text-center">
-                    <div className="text-3xl mb-3">🔍</div>
-                    <div className="text-slate-600 font-semibold">Supplier not found.</div>
-                    <Link to="/suppliers" className="mt-3 inline-block text-sm text-emerald-600 hover:underline">
-                        Return to supplier list
-                    </Link>
-                </div>
-            ) : (
-                <div className="grid gap-6 lg:grid-cols-3">
-                    {/* Left panel – profile + details */}
-                    <div className="space-y-4 lg:col-span-2">
-                        {/* Profile card */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <div className="flex items-start gap-4">
-                                {/* Avatar */}
-                                <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-2xl font-extrabold text-white shadow-md">
-                                    {initials}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <h1 className="text-xl font-extrabold text-slate-900 truncate">
-                                            {supplier.companyName}
-                                        </h1>
-                                        <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${statusColor}`}>
-                                            {supplier.status}
-                                        </span>
-                                        <span className={`rounded-full border px-2.5 py-0.5 text-xs font-semibold ${priorityColor}`}>
-                                            {supplier.importanceLevel || "Normal"}
-                                        </span>
-                                    </div>
-                                    {supplier.name && (
-                                        <div className="mt-0.5 text-sm text-slate-500">{supplier.name}</div>
-                                    )}
-                                    <div className="mt-2 font-mono text-xs text-slate-400">{supplier.supplierCode || "—"}</div>
-                                </div>
-                            </div>
-
-                            {/* Categories */}
-                            <div className="mt-5">
-                                <div className="text-xs font-semibold text-slate-500 mb-2">Categories</div>
-                                <CategoryChips categories={supplier.categories} />
-                            </div>
-                        </div>
-
-                        {/* Contact & logistics */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <div className="text-sm font-bold text-slate-900 mb-3">Contact & Logistics</div>
-                            <InfoRow icon={<Mail size={13} />} label="Email" value={supplier.email} />
-                            <InfoRow icon={<Phone size={13} />} label="Phone" value={supplier.phone} />
-                            <InfoRow icon={<MapPin size={13} />} label="Address" value={supplier.address} />
-                            <InfoRow icon={<Tag size={13} />} label="Contact Person" value={supplier.contactPerson} />
-                            <InfoRow icon={<Clock size={13} />} label="Delivery Day" value={supplier.delivery_day ? `${supplier.delivery_day} days` : null} />
-                            <InfoRow icon={<CreditCard size={13} />} label="Payment Terms" value={supplier.paymentTerms} />
-                        </div>
-
-                        {/* Performance */}
-                        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                            <div className="text-sm font-bold text-slate-900 mb-4">Performance Metrics</div>
-                            <div className="grid grid-cols-3 gap-3">
-                                <Metric label="Total Orders" value={supplier.totalOrders ?? 0} />
-                                <Metric label="Late Deliveries" value={supplier.lateDeliveries ?? 0} />
-                                <Metric label="On-Time Rate" value={`${supplier.onTimeRate ?? 0}%`} />
-                            </div>
-                        </div>
-
-                        {/* Deliveries */}
-                        <SupplierDeliverySection
-                            supplierId={supplier.id}
-                            onDeliveriesChanged={() => loadSuppliers()}
-                        />
-
-                        {/* Audit info */}
-                        <div className="rounded-2xl border border-slate-100 bg-slate-50 p-4">
-                            <div className="text-xs font-bold text-slate-500 mb-3 flex items-center gap-1.5">
-                                <ShieldCheck size={13} /> Audit Information
-                            </div>
-                            <div className="grid grid-cols-2 gap-3 text-xs">
-                                <div>
-                                    <div className="text-slate-400 flex items-center gap-1">
-                                        <Calendar size={11} /> Created At
-                                    </div>
-                                    <div className="mt-0.5 font-semibold text-slate-700">
-                                        {supplier.created_at ? new Date(supplier.created_at).toLocaleDateString() : "—"}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div className="text-slate-400 flex items-center gap-1">
-                                        <Calendar size={11} /> Last Updated
-                                    </div>
-                                    <div className="mt-0.5 font-semibold text-slate-700">
-                                        {supplier.updated_at ? new Date(supplier.updated_at).toLocaleDateString() : "—"}
-                                    </div>
-                                </div>
-                                <div className="col-span-2">
-                                    <div className="text-slate-400">Updated By</div>
-                                    <div className="mt-0.5 font-semibold text-slate-700">{supplier.updated_by || "—"}</div>
-                                </div>
-                            </div>
+            {/* Main Header Card - The "Wow" element */}
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-slate-200 bg-emerald-50 p-8 sm:p-12 shadow-sm">
+                <div className="relative z-10 flex flex-col md:flex-row gap-8 lg:gap-10 items-start md:items-center">
+                    {/* Giant Avatar */}
+                    <div className="relative group">
+                        <div className="flex h-36 w-36 lg:h-40 lg:w-40 flex-shrink-0 items-center justify-center rounded-[2rem] bg-emerald-600 text-5xl font-black text-white group-hover:rotate-0 -rotate-3 transition-transform duration-500 ease-out border-4 border-white">
+                            {initials}
                         </div>
                     </div>
 
-                    {/* Right panel – Score */}
-                    <div>
-                        <ScorePanel score={supplier.reliabilityScore || 0} />
+                    <div className="flex-1 space-y-5">
+                        <div className="flex flex-wrap items-center gap-4">
+                            <h1 className="text-4xl lg:text-6xl font-black tracking-tight text-slate-900 drop-shadow-sm">
+                                {supplier.companyName}
+                            </h1>
+                            <div className="flex gap-2.5 ml-1 mt-2 sm:mt-0">
+                                <span className={`flex items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-black uppercase tracking-wider ${statusColor} shadow-sm backdrop-blur-sm`}>
+                                    <span className={`relative flex h-2.5 w-2.5`}>
+                                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${isStatusActive ? 'bg-emerald-400' : 'hidden'}`}></span>
+                                        <span className={`relative inline-flex rounded-full h-2.5 w-2.5 ${isStatusActive ? 'bg-emerald-500' : 'bg-slate-500'}`}></span>
+                                    </span>
+                                    {supplier.status}
+                                </span>
+                                <span className={`rounded-xl border px-3 py-1.5 text-xs font-black uppercase tracking-wider ${priorityColor} backdrop-blur-sm`}>
+                                    {supplier.importanceLevel || "Regular Supplier"}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-x-8 gap-y-3 text-slate-500 font-semibold text-lg">
+                            {supplier.name && (
+                                <div className="flex items-center gap-2.5">
+                                    <Tag size={20} className="text-emerald-500/70" />
+                                    {supplier.name}
+                                </div>
+                            )}
+                            {supplier.supplierCode && (
+                                <div className="flex items-center gap-2.5">
+                                    <div className="rounded-lg bg-white px-3 py-1 font-mono text-sm font-bold text-slate-600 border border-slate-200 shadow-sm">
+                                        ID: {supplier.supplierCode}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-2">
+                            <CategoryChips categories={supplier.categories} />
+                        </div>
                     </div>
                 </div>
-            )}
+            </div>
+
+            <div className="grid lg:grid-cols-12 gap-6 lg:gap-8">
+                {/* Contact & Logistics Detailed Card */}
+                <div className="lg:col-span-12 rounded-[2.5rem] border border-slate-200 bg-white p-8 lg:p-10 shadow-sm h-fit relative overflow-hidden">
+                    <div className="mb-8 flex items-center gap-4">
+                        <div className="rounded-2xl bg-emerald-600 p-3.5 text-white shadow-sm">
+                            <MapPin size={22} className="opacity-90" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Contact & Logistics</h2>
+                            <p className="text-sm font-semibold text-slate-500 mt-0.5">Primary supplier details</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <InfoRow icon={<Mail size={22} strokeWidth={2.5} />} label="Email Address" value={supplier.email} />
+                        <InfoRow icon={<Phone size={22} strokeWidth={2.5} />} label="Phone Number" value={supplier.phone} />
+                        <InfoRow icon={<MapPin size={22} strokeWidth={2.5} />} label="Physical Address" value={supplier.address} />
+                        <div className="my-4 border-t border-slate-100"></div>
+                        <InfoRow icon={<Tag size={22} strokeWidth={2.5} />} label="Contact Person" value={supplier.contactPerson} />
+
+                        <InfoRow icon={<CreditCard size={22} strokeWidth={2.5} />} label="Payment Terms" value={supplier.paymentTerms} />
+                    </div>
+                </div>
+
+                {/* Deliveries Section */}
+                <div className="lg:col-span-12 rounded-[2.5rem] border border-slate-200 bg-white p-6 lg:p-10 shadow-sm overflow-hidden flex flex-col">
+                    <SupplierDeliverySection
+                        supplierId={supplier.id}
+                        onDeliveriesChanged={() => loadSuppliers()}
+                    />
+                </div>
+            </div>
 
             <SupplierFormModal
                 open={editOpen}
@@ -212,15 +194,6 @@ export default function SupplierDetails() {
                 onClose={() => setEditOpen(false)}
                 onSubmit={handleUpdate}
             />
-        </div>
-    );
-}
-
-function Metric({ label, value }) {
-    return (
-        <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center">
-            <div className="text-xl font-extrabold text-slate-900">{value}</div>
-            <div className="text-xs text-slate-500 mt-0.5">{label}</div>
         </div>
     );
 }

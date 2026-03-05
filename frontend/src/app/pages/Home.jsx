@@ -45,7 +45,7 @@ export default function Home() {
                     <div className="mt-8 flex flex-wrap items-center gap-4">
                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Link
-                                to="/dashboard"
+                                to="/suppliers"
                                 className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-200 transition hover:bg-emerald-700"
                             >
                                 Get Started <ArrowRight size={16} />
@@ -77,8 +77,7 @@ export default function Home() {
                         </div>
                         <div className="text-slate-600">
                             Manage suppliers with{" "}
-                            <span className="font-extrabold text-emerald-600">Data driven</span>{" "}
-                            dashboard
+                            <span className="font-extrabold text-emerald-600">Dashboard</span>{" "}
                         </div>
                     </div>
                 </motion.div>
@@ -189,7 +188,7 @@ export default function Home() {
                                     className="inline-block"
                                 >
                                     <Link
-                                        to="/dashboard"
+                                        to="/suppliers"
                                         className="inline-flex items-center justify-center rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white shadow-lg shadow-emerald-800/30 transition hover:bg-emerald-700"
                                     >
                                         Access Dashboard
@@ -246,19 +245,11 @@ export default function Home() {
                                 <li><a href="#" className="hover:text-emerald-600 transition">Privacy</a></li>
                                 <li><a href="#" className="hover:text-emerald-600 transition">Terms</a></li>
                             </ul>
-                            <div className="mt-6 flex gap-4">
-                                <a href="#" className="text-slate-400 hover:text-emerald-600 transition">
-                                    <Twitter size={18} />
-                                </a>
-                                <a href="#" className="text-slate-400 hover:text-emerald-600 transition">
-                                    <Github size={18} />
-                                </a>
-                            </div>
                         </div>
                     </div>
 
                     <div className="mt-10 border-t border-slate-200 pt-6 text-center text-xs text-slate-500">
-                        © {new Date().getFullYear()} Ransara Supermarket • Supplier Management System
+                        © {new Date().getFullYear()} Ransara Supermarket
                     </div>
                 </div>
             </footer>

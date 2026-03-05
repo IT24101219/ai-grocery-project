@@ -40,17 +40,14 @@ class Supplier(Base):
 
     # for future use for classification
     paymentTerms = Column(String(50), default="")
-    importanceLevel = Column(String(50), default="Normal")
+    importanceLevel = Column(String(50), default="Regular Supplier")
     status = Column(String(50), default="Active", index=True)
 
     # Performance
-    delivery_day = Column(Integer, default=0)
     onTimeRate = Column(Float, default=0.0)
-    totalOrders = Column(Integer, default=0)
-    lateDeliveries = Column(Integer, default=0)
 
     # Rule-Based Score
-    reliabilityScore = Column(Float, default=5.0)
+    reliabilityScore = Column(Float, default=0.0)
 
     # Audit
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -72,13 +69,29 @@ class Supplier(Base):
 class SupplierOrder(Base):
     __tablename__ = "supplier_orders"
     id = Column(Integer, primary_key=True, index=True)
+    order_number = Column(String(30), unique=True, index=True)   # e.g. PO-20260305-001
     supplier_id = Column(Integer, ForeignKey("suppliers.id"), nullable=False)
     order_date = Column(Date, nullable=False)
-    amount = Column(Float, nullable=False)
-    status = Column(String(50), default="Pending")
+    expected_delivery_date = Column(Date, nullable=True)
+    status = Column(String(50), default="Pending")               # Pending / Approved / Shipped / Delivered / Cancelled
+    notes = Column(Text, default="")
+    created_at = Column(DateTime, default=datetime.utcnow)
 
     supplier = relationship("Supplier", back_populates="orders")
+    items = relationship("SupplierOrderItem", back_populates="order", cascade="all, delete")
     deliveries = relationship("SupplierDelivery", back_populates="order")
+
+
+# order line-item table
+class SupplierOrderItem(Base):
+    __tablename__ = "supplier_order_items"
+    id = Column(Integer, primary_key=True, index=True)
+    order_id = Column(Integer, ForeignKey("supplier_orders.id"), nullable=False)
+    item_name = Column(String(200), nullable=False)
+    quantity = Column(Float, nullable=False, default=1)
+    unit_price = Column(Float, nullable=False, default=0.0)
+
+    order = relationship("SupplierOrder", back_populates="items")
 
 
 # delivery table

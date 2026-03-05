@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional, List
 from datetime import datetime, date
 import re
@@ -12,14 +12,11 @@ class SupplierCreate(BaseModel):
     email: str = ""
     phone: str = ""
     address: str = ""
-    categories: List[str] = []          # list of category names (e.g. ["Dairy", "Frozen"])
+    categories: List[str] = []
     paymentTerms: str = ""
-    importanceLevel: str = "Normal"
+    importanceLevel: str = "Regular Supplier"
     status: str = "Active"
-    delivery_day: int = 0
     onTimeRate: float = 0.0
-    totalOrders: int = 0
-    lateDeliveries: int = 0
     updated_by: str = "system"
 
     @field_validator("email")
@@ -52,21 +49,52 @@ class SupplierCategoryOut(SupplierCategoryBase):
     class Config:
         from_attributes = True
 
+class SupplierOrderItemCreate(BaseModel):
+    item_name: str
+    quantity: float
+    unit_price: float
+
+class SupplierOrderItemOut(SupplierOrderItemCreate):
+    id: int
+    order_id: int
+
+    class Config:
+        from_attributes = True
+
 class SupplierOrderCreate(BaseModel):
     supplier_id: int
     order_date: date
-    amount: float
+    expected_delivery_date: Optional[date] = None
     status: str = "Pending"
+    notes: str = ""
+    items: List[SupplierOrderItemCreate] = []
 
-class SupplierOrderOut(SupplierOrderCreate):
+class SupplierOrderOut(BaseModel):
     id: int
+    order_number: Optional[str] = None
+    supplier_id: int
+    order_date: date
+    expected_delivery_date: Optional[date] = None
+    status: str
+    notes: str = ""
+    items: List[SupplierOrderItemOut] = []
+    total_amount: float = 0.0
+    created_at: Optional[datetime] = None
+
+    @model_validator(mode="after")
+    def compute_total(self):
+        self.total_amount = sum(
+            (item.quantity or 0) * (item.unit_price or 0)
+            for item in self.items
+        )
+        return self
 
     class Config:
         from_attributes = True
 
 class SupplierDeliveryCreate(BaseModel):
     supplier_id: int
-    order_id: Optional[int] = None       # links this delivery to the specific order it fulfils
+    order_id: Optional[int] = None
     delivery_date: Optional[date] = None
     expected_date: date
     delivered_on_time: bool = True
@@ -88,14 +116,11 @@ class SupplierOut(BaseModel):
     email: str = ""
     phone: str = ""
     address: str = ""
-    categories: List[str] = []          # serialized as list of category name strings
+    categories: List[str] = []
     paymentTerms: str = ""
-    importanceLevel: str = "Normal"
+    importanceLevel: str = "Regular Supplier"
     status: str = "Active"
-    delivery_day: int = 0
     onTimeRate: float = 0.0
-    totalOrders: int = 0
-    lateDeliveries: int = 0
     reliabilityScore: float = 0.0
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
